@@ -71,6 +71,7 @@ const ChatView = ({ tabId, active }: { tabId: number; active: boolean }) => {
   const cwd = useTabState(tabId, (s) => s.cwd);
   const queue = useTabState(tabId, (s) => s.queue);
   const scrollRef = useRef<HTMLDivElement>(null);
+  const innerRef = useRef<HTMLDivElement>(null);
   const stick = useRef(true);
   const last = items[items.length - 1];
   const showTyping = running && !(last?.kind === 'assistant' && last.streaming);
@@ -87,12 +88,17 @@ const ChatView = ({ tabId, active }: { tabId: number; active: boolean }) => {
     if (!el) {
       return undefined;
     }
+    // Ook de inhoud volgen: afbeeldingen, codekleuring en dergelijke maken berichten pas na het tekenen hoger,
+    // en dan moet een chat die onderaan stond daar blijven.
     const observer = new ResizeObserver(() => {
       if (stick.current) {
         el.scrollTop = el.scrollHeight;
       }
     });
     observer.observe(el);
+    if (innerRef.current) {
+      observer.observe(innerRef.current);
+    }
     return () => observer.disconnect();
   }, []);
 
@@ -113,7 +119,7 @@ const ChatView = ({ tabId, active }: { tabId: number; active: boolean }) => {
       aria-busy={running}
     >
       <TabIdContext.Provider value={tabId}>
-      <div className={styles.inner}>
+      <div ref={innerRef} className={styles.inner}>
         {items.length === 0 && !running && (
           <div className={styles.empty}>{cwd ? `Claude Code werkt in ${cwd}` : 'Kies eerst een project'}</div>
         )}
