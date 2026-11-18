@@ -1,0 +1,62 @@
+@use '../../stijl';
+
+.select {
+  position: relative;
+  display: inline-flex;
+}
+
+.menu {
+  @include stijl.popover;
+  position: absolute;
+  bottom: calc(100% + var(--ruimte-2));
+  left: 0;
+  z-index: 40;
+  min-width: 220px;
+  max-height: 340px;
+  overflow-y: auto;
+  margin: 0;
+  padding: var(--ruimte-1);
+  list-style: none;
+}
+
+.option {
+  @include stijl.klein;
+  display: flex;
+  align-items: center;
+  gap: var(--ruimte-2);
+  width: 100%;
+  min-height: 34px;
+  padding: 0 var(--ruimte-3) 0 var(--ruimte-2);
+  border: 0;
+  border-radius: var(--vorm-sm);
+  background: transparent;
+  color: var(--tekst-hoofd);
+  text-align: left;
+  cursor: pointer;
+
+  &:hover {
+    background: var(--accent-zacht);
+  }
+
+  &[aria-selected='true'] {
+    color: var(--accent-standaard);
+    font-weight: 600;
+  }
+}
+
+.check {
+  display: flex;
+  flex: 0 0 16px;
+  color: var(--accent-standaard);
+}
+
+.optionLabel {
+  flex: 1 1 auto;
+  white-space: nowrap;
+}
+
+.hint {
+  @include stijl.label;
+  color: var(--tekst-vaag);
+  white-space: nowrap;
+}

@@ -1,0 +1,133 @@
+@use '@fontsource-variable/jetbrains-mono';
+
+/* Kleuren, tekst, hoogtes en vorm komen uit vertex/tokens.css (geïmporteerd in main.tsx). */
+:root {
+  /* --alpha: dekking van de achtergrond (instelbaar in de app); vlakken met inhoud blijven wat dekkender. */
+  --alpha: 1;
+  --app-pagina: color-mix(in srgb, var(--achtergrond-pagina) calc(var(--alpha) * 100%), transparent);
+  --app-zijbalk: color-mix(in srgb, var(--hoogte-1-vlak) calc(var(--alpha) * 100%), transparent);
+  --app-vlak: color-mix(in srgb, var(--hoogte-1-vlak) calc(min(1, var(--alpha) + 0.25) * 100%), transparent);
+  --app-invoer: color-mix(in srgb, var(--hoogte-2-vlak) calc(min(1, var(--alpha) + 0.3) * 100%), transparent);
+  --app-code: color-mix(in srgb, var(--achtergrond-kaart-2) calc(min(1, var(--alpha) + 0.3) * 100%), transparent);
+  /* Vertex heeft geen monospace-lettertype; code en terminal houden JetBrains Mono. */
+  --font-mono: 'JetBrains Mono Variable', ui-monospace, monospace;
+  --tabbalk-hoogte: 48px;
+  --statusbalk-hoogte: 30px;
+  --dock-width: 460px;
+}
+
+/* Eigen accentkleur uit de instellingen (--eigen-accent, gezet door de app); de rest is hieruit afgeleid. */
+:root[data-accent] {
+  --accent-vlak: var(--eigen-accent);
+  --accent-standaard: var(--eigen-accent);
+  --accent-zacht: color-mix(in srgb, var(--eigen-accent) 14%, var(--hoogte-1-vlak));
+  --verloop-accent: linear-gradient(150deg, var(--eigen-accent) 0%, color-mix(in srgb, var(--eigen-accent) 82%, black) 100%);
+  --schaduw-accent: 0 6px 16px -6px color-mix(in srgb, var(--eigen-accent) 32%, transparent);
+}
+
+/* Donker: de tekstkleur-variant van het accent wordt lichter, zoals Vertex dat ook doet. */
+@media (prefers-color-scheme: dark) {
+  :root[data-accent]:not([data-thema='licht']) {
+    --accent-standaard: color-mix(in srgb, var(--eigen-accent) 55%, white);
+    --accent-zacht: color-mix(in srgb, var(--eigen-accent) 28%, var(--hoogte-1-vlak));
+  }
+}
+
+:root[data-accent][data-thema='donker'] {
+  --accent-standaard: color-mix(in srgb, var(--eigen-accent) 55%, white);
+  --accent-zacht: color-mix(in srgb, var(--eigen-accent) 28%, var(--hoogte-1-vlak));
+}
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html,
+body,
+#root {
+  height: 100%;
+  margin: 0;
+}
+
+body {
+  font: 400 13px/18px var(--tekst-familie);
+  background: var(--app-pagina);
+  color: var(--tekst-hoofd);
+  -webkit-font-smoothing: antialiased;
+}
+
+button,
+input,
+textarea {
+  font: inherit;
+  color: inherit;
+}
+
+::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+
+::-webkit-scrollbar-thumb {
+  background: color-mix(in srgb, var(--tekst-vaag) 45%, transparent);
+  border: 2px solid transparent;
+  border-radius: var(--vorm-pill);
+  background-clip: padding-box;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background-color: var(--tekst-vaag);
+}
+
+::-webkit-scrollbar-track,
+::-webkit-scrollbar-corner {
+  background: transparent;
+}
+
+.hljs-keyword,
+.hljs-selector-tag,
+.hljs-built_in,
+.hljs-type {
+  color: var(--accent-standaard);
+}
+
+.hljs-string,
+.hljs-attr,
+.hljs-symbol,
+.hljs-template-variable,
+.hljs-addition {
+  color: var(--status-positief);
+}
+
+.hljs-number,
+.hljs-literal,
+.hljs-variable,
+.hljs-attribute {
+  color: var(--categorie-zon-tekst);
+}
+
+.hljs-comment,
+.hljs-quote,
+.hljs-meta {
+  color: var(--tekst-gedempt);
+  font-style: italic;
+}
+
+.hljs-title,
+.hljs-function,
+.hljs-section,
+.hljs-name {
+  color: var(--categorie-lucht-tekst);
+}
+
+.hljs-deletion,
+.hljs-regexp {
+  color: var(--status-negatief);
+}
+
+.hljs-property,
+.hljs-params {
+  color: var(--categorie-mint-tekst);
+}

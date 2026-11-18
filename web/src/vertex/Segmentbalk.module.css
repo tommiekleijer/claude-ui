@@ -1,0 +1,59 @@
+.balk {
+	display: inline-flex;
+	padding: 4px;
+	gap: 0;
+	background: var(--achtergrond-spoor);
+	border: 1px solid var(--lijn-standaard);
+	border-radius: 14px;
+}
+.balk.vol {
+	display: flex;
+}
+.optie {
+	all: unset;
+	box-sizing: border-box;
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	gap: 6px;
+	padding: 8px 14px;
+	border-radius: 10px;
+	font: 600 15px/22px var(--tekst-familie);
+	color: var(--tekst-gedempt);
+	cursor: pointer;
+	white-space: nowrap;
+	transition:
+		background-color 0.15s,
+		color 0.15s;
+}
+.vol .optie {
+	flex: 1;
+}
+.optie:focus-visible {
+	outline: 2px solid var(--accent-standaard);
+	outline-offset: 1px;
+}
+.actief {
+	background: var(--hoogte-2-vlak);
+	box-shadow: var(--schaduw-hoogte-2);
+	color: var(--accent-standaard);
+}
+.teller {
+	padding: 0 6px;
+	border-radius: var(--vorm-pill);
+	background: var(--accent-zacht);
+	color: var(--accent-standaard);
+	font: 600 12px/18px var(--tekst-familie);
+}
+.gradient {
+	background: rgb(245 240 255 / 0.3);
+	border-color: rgb(255 255 255 / 0.14);
+}
+.gradient .optie {
+	color: var(--tekst-op-accent);
+}
+.gradient .actief {
+	background: #fff;
+	box-shadow: none;
+	color: var(--accent-vlak);
+}

@@ -1,0 +1,20 @@
+@use '../../stijl';
+
+.chat {
+  display: flex;
+  flex-direction: column;
+  gap: var(--ruimte-3);
+}
+
+.empty {
+  @include stijl.klein;
+  margin: var(--ruimte-1);
+  color: var(--tekst-vaag);
+}
+
+.working {
+  @include stijl.klein;
+  margin-top: var(--ruimte-3);
+  color: var(--tekst-vaag);
+  font-style: italic;
+}

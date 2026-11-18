@@ -1,0 +1,41 @@
+@use 'stijl';
+
+.app {
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+}
+
+.body {
+  display: flex;
+  flex: 1 1 auto;
+  min-height: 0;
+}
+
+.main {
+  display: flex;
+  flex-direction: column;
+  flex: 1 1 auto;
+  min-width: 0;
+  background: var(--app-pagina);
+}
+
+.warning {
+  @include stijl.klein;
+  display: flex;
+  align-items: center;
+  gap: var(--ruimte-2);
+  margin: var(--ruimte-3) var(--ruimte-5) 0;
+  padding: var(--ruimte-2) var(--ruimte-3);
+  border-radius: var(--vorm-md);
+  background: var(--status-waarschuwing-zacht);
+  color: var(--status-waarschuwing);
+
+  svg {
+    flex: 0 0 auto;
+  }
+}
+
+.withDock {
+  padding-right: var(--dock-width);
+}

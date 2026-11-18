@@ -1,0 +1,93 @@
+@use '../../stijl';
+
+.bar {
+  @include stijl.label;
+  display: flex;
+  align-items: center;
+  gap: var(--ruimte-4);
+  flex: 0 0 auto;
+  height: var(--statusbalk-hoogte);
+  padding: 0 var(--ruimte-3);
+  background: var(--app-pagina);
+  border-top: 1px solid var(--lijn-standaard);
+  color: var(--tekst-gedempt);
+  font-weight: 400;
+  white-space: nowrap;
+}
+
+.model {
+  color: var(--accent-standaard);
+  font-weight: 600;
+}
+
+.segment {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--ruimte-1);
+  font-variant-numeric: tabular-nums;
+}
+
+.label,
+.dim {
+  color: var(--tekst-vaag);
+}
+
+.label {
+  font-weight: 600;
+}
+
+.ok {
+  color: var(--status-positief);
+  font-weight: 600;
+}
+
+.warn {
+  color: var(--status-waarschuwing);
+  font-weight: 600;
+}
+
+.bad {
+  color: var(--status-negatief);
+  font-weight: 600;
+}
+
+.critical {
+  color: var(--status-negatief);
+  font-weight: 700;
+  animation: blink 1s steps(2) infinite;
+}
+
+.path {
+  flex: 1 1 auto;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  text-align: right;
+  font-family: var(--font-mono);
+  font-size: 11.5px;
+  color: var(--tekst-vaag);
+}
+
+@keyframes blink {
+  to {
+    opacity: 0.3;
+  }
+}
+
+.usage {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--ruimte-4);
+  height: 24px;
+  padding: 0 var(--ruimte-2);
+  border: 0;
+  border-radius: var(--vorm-sm);
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  cursor: pointer;
+
+  &:hover {
+    background: var(--achtergrond-vlak);
+  }
+}

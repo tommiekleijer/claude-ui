@@ -1,0 +1,164 @@
+@use '../../code' as code;
+@use '../../stijl';
+
+.markdown {
+  min-width: 0;
+  overflow-wrap: anywhere;
+
+  > :first-child {
+    margin-top: 0;
+  }
+
+  > :last-child {
+    margin-bottom: 0;
+  }
+
+  p,
+  ul,
+  ol,
+  table,
+  blockquote {
+    margin: 0 0 var(--ruimte-3);
+  }
+
+  ul,
+  ol {
+    padding-left: var(--ruimte-6);
+  }
+
+  li + li {
+    margin-top: var(--ruimte-1);
+  }
+
+  li::marker {
+    color: var(--tekst-gedempt);
+  }
+
+  h1,
+  h2,
+  h3,
+  h4 {
+    @include stijl.body-vet;
+    margin: var(--ruimte-5) 0 var(--ruimte-2);
+    color: var(--tekst-hoofd);
+  }
+
+  h1,
+  h2 {
+    @include stijl.subkop;
+  }
+
+  strong {
+    font-weight: 600;
+  }
+
+  :not(pre) > code {
+    @include code.inline;
+  }
+
+  blockquote {
+    padding-left: var(--ruimte-3);
+    border-left: 3px solid var(--accent-zacht);
+    color: var(--tekst-gedempt);
+  }
+
+  table {
+    @include stijl.klein;
+    border-collapse: separate;
+    border-spacing: 0;
+    display: block;
+    overflow-x: auto;
+  }
+
+  th,
+  td {
+    border-bottom: 1px solid var(--lijn-standaard);
+    padding: var(--ruimte-2) var(--ruimte-3);
+    text-align: left;
+  }
+
+  th {
+    @include stijl.label;
+    color: var(--tekst-gedempt);
+    border-bottom-color: var(--hoogte-2-rand);
+  }
+
+  a {
+    color: var(--accent-standaard);
+    font-weight: 600;
+    text-decoration: none;
+
+    &:hover {
+      text-decoration: underline;
+    }
+  }
+
+  hr {
+    margin: var(--ruimte-4) 0;
+    border: 0;
+    border-top: 1px solid var(--lijn-standaard);
+  }
+}
+
+.codeBlock {
+  position: relative;
+  margin: 0 0 var(--ruimte-3);
+
+  pre {
+    @include code.block(var(--app-vlak));
+    padding-right: 48px;
+  }
+
+  &:hover .codeActions {
+    opacity: 1;
+  }
+}
+
+.codeActions {
+  position: absolute;
+  top: var(--ruimte-2);
+  right: var(--ruimte-2);
+  display: flex;
+  gap: var(--ruimte-1);
+  opacity: 0;
+  transition: opacity 0.15s;
+
+  &:focus-within {
+    opacity: 1;
+  }
+}
+
+.command {
+  cursor: pointer;
+
+  &:hover {
+    outline: 1px solid var(--accent-standaard);
+  }
+}
+
+.commandIcon {
+  margin-right: 4px;
+  vertical-align: 0;
+  opacity: 0.7;
+}
+
+.path {
+  cursor: text;
+
+  &:hover {
+    text-decoration: underline dotted;
+  }
+}
+
+.inlineImage {
+  display: block;
+  margin: var(--ruimte-2) 0;
+
+  img {
+    max-width: min(100%, 520px);
+    max-height: 360px;
+    border: 1px solid var(--hoogte-1-rand);
+    border-radius: var(--vorm-md);
+    cursor: zoom-in;
+  }
+}

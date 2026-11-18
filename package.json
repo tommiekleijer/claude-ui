@@ -1,0 +1,128 @@
+{
+  "name": "claude-ui",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "concurrently -k -n server,web \"CLAUDE_UI_DEV=1 tsx watch server/index.ts\" \"vite\"",
+    "dev:app": "CLAUDE_UI_DEV_URL=http://127.0.0.1:5173 electron .",
+    "build": "vite build && tsc -p server/tsconfig.json && tsc -p electron/tsconfig.json",
+    "app": "electron .",
+    "typecheck": "tsc -p server/tsconfig.json --noEmit && tsc -p web/tsconfig.json && tsc -p electron/tsconfig.json --noEmit",
+    "dist": "npm run build && electron-builder"
+  },
+  "dependencies": {
+    "@anthropic-ai/claude-agent-sdk": "^0.3.327",
+    "@fastify/static": "^10.1.11",
+    "@fontsource-variable/inter": "^5.3.0",
+    "@fontsource-variable/jetbrains-mono": "^5.3.0",
+    "@xterm/addon-fit": "^0.11.0",
+    "@xterm/xterm": "^6.0.0",
+    "diff": "^9.0.0",
+    "electron-updater": "^6.8.11",
+    "fastify": "^5.12.8",
+    "lucide-react": "^1.75.0",
+    "react": "^19.3.1",
+    "react-dom": "^19.3.1",
+    "react-markdown": "^10.1.0",
+    "rehype-highlight": "^7.0.2",
+    "remark-breaks": "^4.0.0",
+    "remark-gfm": "^4.0.1",
+    "vertex": "github:Kristianvanderlinde/vertex",
+    "ws": "^8.23.0",
+    "zustand": "^5.1.0"
+  },
+  "devDependencies": {
+    "@electron/packager": "^18.4.4",
+    "@types/diff": "^7.0.2",
+    "@types/node": "^20.19.43",
+    "@types/react": "^19.3.0",
+    "@types/react-dom": "^19.3.0",
+    "@types/ws": "^8.18.2",
+    "@vitejs/plugin-react": "^6.3.0",
+    "concurrently": "^9.2.5",
+    "electron": "^41.7.1",
+    "electron-builder": "^26.18.0",
+    "sass": "^1.108.2",
+    "tsx": "^4.23.15",
+    "typescript": "^5.9.3",
+    "vite": "^8.3.8"
+  },
+  "main": "dist/electron/main.js",
+  "optionalDependencies": {
+    "node-pty": "^1.1.0"
+  },
+  "description": "Desktop-app met een grafische interface voor Claude Code, op basis van je eigen Claude-abonnement.",
+  "author": "Tommie Kleijer",
+  "license": "MIT",
+  "homepage": "https://github.com/tommiekleijer/claude-ui",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/tommiekleijer/claude-ui.git"
+  },
+  "build": {
+    "appId": "nl.tommiekleijer.claude-ui",
+    "productName": "Claude UI",
+    "asar": false,
+    "directories": {
+      "output": "out",
+      "buildResources": "build"
+    },
+    "files": [
+      "dist/**/*",
+      "!**/*.map",
+      "electron/icon.png",
+      "electron/preload.cjs",
+      "package.json"
+    ],
+    "afterPack": "scripts/after-pack.cjs",
+    "publish": [
+      {
+        "provider": "github",
+        "owner": "tommiekleijer",
+        "repo": "claude-ui",
+        "releaseType": "release"
+      }
+    ],
+    "linux": {
+      "target": [
+        "AppImage"
+      ],
+      "category": "Development",
+      "icon": "build/icon.png",
+      "artifactName": "claude-ui-${version}-linux-${arch}.${ext}"
+    },
+    "mac": {
+      "target": [
+        "dmg",
+        "zip"
+      ],
+      "category": "public.app-category.developer-tools",
+      "icon": "build/icon.png",
+      "identity": null,
+      "artifactName": "claude-ui-${version}-mac-${arch}.${ext}"
+    },
+    "win": {
+      "target": [
+        "nsis"
+      ],
+      "icon": "build/icon.png",
+      "artifactName": "claude-ui-${version}-windows-setup.${ext}",
+      "files": [
+        "!node_modules/@anthropic-ai/claude-agent-sdk-*/**",
+        "!node_modules/node-pty/**"
+      ],
+      "extraResources": [
+        {
+          "from": "build/linux-backend",
+          "to": "linux-backend"
+        }
+      ]
+    },
+    "nsis": {
+      "oneClick": false,
+      "perMachine": false,
+      "allowToChangeInstallationDirectory": true
+    }
+  }
+}

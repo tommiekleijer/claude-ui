@@ -1,0 +1,110 @@
+@use '../../code' as code;
+@use '../../stijl';
+
+.panel {
+  width: min(1200px, calc(100% - 48px));
+  margin: 0 auto var(--ruimte-2);
+  border: 1px solid var(--hoogte-1-rand);
+  border-radius: var(--vorm-lg);
+  background: var(--app-vlak);
+  box-shadow: var(--schaduw-hoogte-1);
+}
+
+.header {
+  @include stijl.label;
+  display: flex;
+  align-items: center;
+  gap: var(--ruimte-2);
+  width: 100%;
+  height: 36px;
+  padding: 0 var(--ruimte-4);
+  border: 0;
+  border-radius: var(--vorm-lg);
+  background: transparent;
+  color: var(--tekst-hoofd);
+  text-align: left;
+  cursor: pointer;
+
+  > svg {
+    color: var(--tekst-vaag);
+  }
+}
+
+.counts {
+  display: flex;
+  gap: var(--ruimte-3);
+  margin-left: auto;
+  color: var(--tekst-vaag);
+  font-weight: 400;
+}
+
+.active {
+  color: var(--status-waarschuwing);
+  font-weight: 600;
+}
+
+.list {
+  max-height: 200px;
+  overflow-y: auto;
+  margin: 0;
+  padding: var(--ruimte-1) var(--ruimte-2) var(--ruimte-2);
+  list-style: none;
+  border-top: 1px solid var(--lijn-standaard);
+}
+
+.row {
+  @include stijl.klein;
+  display: flex;
+  align-items: center;
+  gap: var(--ruimte-2);
+  min-height: 40px;
+  padding: var(--ruimte-1) var(--ruimte-2);
+}
+
+.icon {
+  display: flex;
+  flex: 0 0 auto;
+  color: var(--accent-standaard);
+}
+
+.main {
+  display: flex;
+  flex: 1 1 auto;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.desc {
+  display: flex;
+  align-items: center;
+  gap: var(--ruimte-2);
+  min-width: 0;
+}
+
+.descText,
+.sub {
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+.sub {
+  color: var(--tekst-vaag);
+  font-family: var(--font-mono);
+  font-size: 11.5px;
+}
+
+.meta {
+  @include stijl.label;
+  flex: 0 0 auto;
+  color: var(--tekst-vaag);
+  font-weight: 400;
+  font-variant-numeric: tabular-nums;
+}
+
+.output {
+  @include code.block;
+  max-height: 60vh;
+  overflow: auto;
+  white-space: pre-wrap;
+}

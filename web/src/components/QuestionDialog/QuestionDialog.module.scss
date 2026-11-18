@@ -1,0 +1,158 @@
+@use '../../code' as code;
+@use '../../stijl';
+
+.questions {
+  display: flex;
+  flex-direction: column;
+  gap: var(--ruimte-4);
+}
+
+.question {
+  margin: 0;
+  padding: 0;
+  border: 0;
+  min-width: 0;
+
+  legend {
+    @include stijl.body-vet;
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: var(--ruimte-2);
+    margin-bottom: var(--ruimte-3);
+    padding: 0;
+  }
+}
+
+.questionText {
+  flex: 1 1 auto;
+}
+
+.multi {
+  @include stijl.label;
+  color: var(--tekst-vaag);
+  font-weight: 400;
+}
+
+.option {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--ruimte-3);
+  margin-bottom: var(--ruimte-2);
+  padding: var(--ruimte-3) var(--ruimte-4);
+  border: 1px solid var(--hoogte-1-rand);
+  border-radius: var(--vorm-md);
+  background: var(--hoogte-1-vlak);
+  cursor: pointer;
+  transition: border-color 0.15s, background-color 0.15s;
+
+  &:hover {
+    border-color: var(--accent-standaard);
+  }
+
+  input[type='radio'],
+  input[type='checkbox'] {
+    flex: 0 0 auto;
+    width: 18px;
+    height: 18px;
+    margin: 2px 0 0;
+    accent-color: var(--accent-vlak);
+  }
+}
+
+.chosen {
+  border-color: var(--accent-standaard);
+  background: var(--accent-zacht);
+  box-shadow: 0 0 0 1px var(--accent-standaard);
+}
+
+.optionText {
+  display: flex;
+  flex: 1 1 auto;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.label {
+  @include stijl.body-vet;
+}
+
+.description {
+  @include stijl.klein;
+  color: var(--tekst-gedempt);
+}
+
+.preview {
+  @include code.block;
+  margin-top: var(--ruimte-2);
+  max-height: 14rem;
+  overflow: auto;
+}
+
+.other {
+  @include stijl.klein;
+  height: 36px;
+  margin-top: var(--ruimte-1);
+  padding: 0 var(--ruimte-3);
+  border: 1px solid var(--lijn-standaard);
+  border-radius: var(--vorm-sm);
+  outline: none;
+  background: var(--hoogte-2-vlak);
+  color: var(--tekst-hoofd);
+  transition: border-color 0.15s, box-shadow 0.15s;
+
+  &::placeholder {
+    color: var(--tekst-vaag);
+  }
+
+  &:focus {
+    border-color: var(--accent-standaard);
+    box-shadow: 0 0 0 4px var(--accent-zacht);
+  }
+}
+
+.icon {
+  color: var(--accent-standaard);
+}
+
+.progress {
+  @include stijl.label;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  margin-left: auto;
+  color: var(--tekst-vaag);
+  font-weight: 400;
+
+  > span {
+    margin-left: var(--ruimte-1);
+  }
+}
+
+.step {
+  width: 8px;
+  height: 8px;
+  padding: 0;
+  border: 0;
+  border-radius: 50%;
+  background: var(--tekst-vaag);
+  cursor: pointer;
+  transition: width 0.15s;
+}
+
+.stepDone {
+  background: var(--accent-standaard);
+  opacity: 0.45;
+}
+
+.stepActive {
+  width: 20px;
+  border-radius: var(--vorm-pill);
+  background: var(--accent-standaard);
+  opacity: 1;
+}
+
+.spacer {
+  flex: 1 1 auto;
+}

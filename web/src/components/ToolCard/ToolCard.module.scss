@@ -1,0 +1,155 @@
+@use '../../code' as code;
+@use '../../stijl';
+
+.card {
+  min-width: 0;
+  border: 1px solid transparent;
+  border-radius: var(--vorm-md);
+
+  &[open] {
+    border-color: var(--hoogte-1-rand);
+    background: var(--app-vlak);
+    box-shadow: var(--schaduw-hoogte-1);
+  }
+
+  &[open] .chevron {
+    transform: rotate(90deg);
+  }
+
+  &[open] > .header {
+    border-radius: var(--vorm-md) var(--vorm-md) 0 0;
+  }
+}
+
+.header {
+  @include stijl.klein;
+  display: flex;
+  align-items: center;
+  gap: var(--ruimte-2);
+  min-width: 0;
+  min-height: 34px;
+  padding: var(--ruimte-1) var(--ruimte-3);
+  border-radius: var(--vorm-md);
+  cursor: pointer;
+  list-style: none;
+  user-select: none;
+
+  &::-webkit-details-marker {
+    display: none;
+  }
+
+  &:hover {
+    background: var(--achtergrond-vlak);
+  }
+
+  /* Alleen de samenvatting krimpt (met ...); chips en status blijven volledig zichtbaar. */
+  > :not(.summary) {
+    flex: 0 0 auto;
+  }
+}
+
+.chevron {
+  flex: 0 0 auto;
+  color: var(--tekst-vaag);
+  transition: transform 0.15s;
+}
+
+.icon {
+  display: flex;
+  flex: 0 0 auto;
+  color: var(--accent-standaard);
+}
+
+.name {
+  flex: 0 0 auto;
+  font-weight: 600;
+  color: var(--tekst-hoofd);
+}
+
+.summary {
+  flex: 1 1 auto;
+  min-width: 0;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+  color: var(--tekst-gedempt);
+  font-family: var(--font-mono);
+  font-size: 12px;
+}
+
+.body {
+  display: flex;
+  flex-direction: column;
+  gap: var(--ruimte-2);
+  padding: var(--ruimte-3);
+  border-top: 1px solid var(--lijn-standaard);
+}
+
+.code {
+  @include code.block;
+  max-height: 20rem;
+  overflow: auto;
+}
+
+.error {
+  background: var(--status-negatief-zacht);
+  border-color: transparent;
+  color: var(--status-negatief);
+}
+
+.diff {
+  @include code.block;
+  padding: var(--ruimte-2) 0;
+  max-height: 28rem;
+  overflow: auto;
+
+  span {
+    display: block;
+    padding: 0 var(--ruimte-4);
+  }
+}
+
+.added {
+  background: var(--status-positief-zacht);
+  color: var(--status-positief);
+}
+
+.removed {
+  background: var(--status-negatief-zacht);
+  color: var(--status-negatief);
+}
+
+.context {
+  color: var(--tekst-gedempt);
+}
+
+.steps {
+  @include stijl.label;
+  flex: 0 0 auto;
+  color: var(--tekst-vaag);
+}
+
+.activity {
+  max-height: 16rem;
+  overflow-y: auto;
+  margin: 0;
+  padding: var(--ruimte-1) var(--ruimte-2) var(--ruimte-1) var(--ruimte-6);
+  border-left: 2px solid var(--accent-zacht);
+  color: var(--tekst-gedempt);
+  font-family: var(--font-mono);
+  font-size: 12px;
+  line-height: 1.6;
+
+  li {
+    overflow: hidden;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+  }
+}
+
+.activityText {
+  color: var(--tekst-vaag);
+  font-family: var(--tekst-familie);
+  font-style: italic;
+  list-style: none;
+}

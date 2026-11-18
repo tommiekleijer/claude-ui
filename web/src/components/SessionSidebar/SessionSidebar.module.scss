@@ -1,0 +1,145 @@
+@use '../../stijl';
+
+.sidebar {
+  display: flex;
+  flex-direction: column;
+  flex: 0 0 280px;
+  width: 280px;
+  min-height: 0;
+  background: var(--app-zijbalk);
+  border-right: 1px solid var(--hoogte-1-rand);
+}
+
+.top {
+  display: flex;
+  align-items: center;
+  gap: var(--ruimte-2);
+  padding: var(--ruimte-3) var(--ruimte-3) var(--ruimte-2);
+}
+
+.project {
+  @include stijl.body-vet;
+  display: flex;
+  flex: 1 1 auto;
+  align-items: center;
+  gap: var(--ruimte-2);
+  min-width: 0;
+  height: 40px;
+  padding: 0 var(--ruimte-3);
+  border: 1px solid var(--lijn-standaard);
+  border-radius: var(--vorm-md);
+  background: var(--hoogte-2-vlak);
+  color: var(--tekst-hoofd);
+  text-align: left;
+  cursor: pointer;
+  transition: border-color 0.15s;
+
+  svg {
+    flex: 0 0 auto;
+    color: var(--accent-standaard);
+  }
+
+  &:hover {
+    border-color: var(--accent-standaard);
+  }
+
+  &:focus-visible {
+    outline: 2px solid var(--accent-standaard);
+    outline-offset: 2px;
+  }
+}
+
+.projectName {
+  min-width: 0;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+.tools {
+  display: flex;
+  flex-direction: column;
+  gap: var(--ruimte-2);
+  padding: var(--ruimte-1) var(--ruimte-3) var(--ruimte-3);
+  border-bottom: 1px solid var(--lijn-standaard);
+}
+
+.list {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow-y: auto;
+  margin: 0;
+  padding: var(--ruimte-2);
+  list-style: none;
+}
+
+.item {
+  @include stijl.klein;
+  display: flex;
+  align-items: center;
+  gap: var(--ruimte-2);
+  width: 100%;
+  height: 36px;
+  padding: 0 var(--ruimte-3);
+  border: 0;
+  border-radius: var(--vorm-sm);
+  background: transparent;
+  color: var(--tekst-hoofd);
+  text-align: left;
+  cursor: pointer;
+
+  &:hover:not(:disabled) {
+    background: var(--achtergrond-vlak);
+  }
+
+  &:disabled {
+    cursor: default;
+  }
+}
+
+.active,
+.active:hover:not(:disabled) {
+  background: var(--accent-zacht);
+  color: var(--accent-standaard);
+  font-weight: 600;
+
+  .icon {
+    color: var(--accent-standaard);
+  }
+}
+
+.icon {
+  flex: 0 0 auto;
+  color: var(--tekst-vaag);
+}
+
+.title {
+  flex: 1 1 auto;
+  min-width: 0;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+.date,
+.repo {
+  @include stijl.label;
+  flex: 0 0 auto;
+  color: var(--tekst-vaag);
+  font-weight: 400;
+  font-variant-numeric: tabular-nums;
+}
+
+.repo {
+  flex: 0 1 auto;
+  max-width: 96px;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+.empty {
+  @include stijl.klein;
+  padding: var(--ruimte-2) var(--ruimte-3);
+  color: var(--tekst-vaag);
+}

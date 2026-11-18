@@ -1,0 +1,113 @@
+@use '../../stijl';
+
+.section {
+  margin-bottom: var(--ruimte-5);
+
+  &:last-child {
+    margin-bottom: 0;
+  }
+}
+
+.heading {
+  @include stijl.label;
+  margin: 0 0 var(--ruimte-2);
+  color: var(--tekst-gedempt);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--ruimte-5);
+  padding: var(--ruimte-3) 0;
+  border-bottom: 1px solid var(--lijn-standaard);
+
+  &:last-child {
+    border-bottom: 0;
+  }
+}
+
+.rowText {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.label {
+  @include stijl.body-vet;
+}
+
+.hint {
+  @include stijl.klein;
+  color: var(--tekst-gedempt);
+}
+
+.control {
+  display: flex;
+  flex: 0 0 auto;
+  align-items: center;
+  gap: var(--ruimte-3);
+}
+
+.swatches {
+  display: flex;
+  align-items: center;
+  gap: var(--ruimte-2);
+}
+
+.swatch {
+  position: relative;
+  box-sizing: border-box;
+  width: 24px;
+  height: 24px;
+  padding: 0;
+  border: 0;
+  border-radius: 50%;
+  background: var(--swatch);
+  cursor: pointer;
+  transition: transform 0.12s, box-shadow 0.12s;
+
+  &:hover {
+    transform: scale(1.12);
+  }
+}
+
+.swatchActive {
+  box-shadow: 0 0 0 2px var(--hoogte-4-vlak), 0 0 0 4px var(--swatch);
+}
+
+/* Eigen kleur: een kleurenwiel; is er een eigen kleur gekozen, dan komt die in het midden. */
+.custom {
+  background: conic-gradient(#ff5a5a, #ffd23f, #4cd964, #38c8e6, #5b6bff, #c15bff, #ff5a5a);
+
+  &::after {
+    content: '';
+    position: absolute;
+    inset: 7px;
+    border-radius: 50%;
+    background: var(--swatch);
+  }
+
+  input {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    opacity: 0;
+    cursor: pointer;
+  }
+}
+
+.range {
+  width: 160px;
+  accent-color: var(--accent-vlak);
+}
+
+.value {
+  width: 40px;
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}

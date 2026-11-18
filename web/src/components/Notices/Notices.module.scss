@@ -1,0 +1,31 @@
+@use '../../stijl';
+
+.notices {
+  position: fixed;
+  right: var(--ruimte-4);
+  bottom: calc(var(--statusbalk-hoogte) + var(--ruimte-3));
+  z-index: 60;
+  display: flex;
+  flex-direction: column;
+  gap: var(--ruimte-2);
+  max-width: 440px;
+}
+
+.notice {
+  @include stijl.klein;
+  display: flex;
+  align-items: flex-start;
+  gap: var(--ruimte-3);
+  padding: var(--ruimte-2) var(--ruimte-2) var(--ruimte-2) var(--ruimte-4);
+  background: var(--hoogte-3-vlak);
+  border: 1px solid var(--hoogte-3-rand);
+  border-left: 4px solid var(--status-negatief);
+  border-radius: var(--vorm-md);
+  box-shadow: var(--schaduw-hoogte-3);
+  color: var(--tekst-hoofd);
+
+  span {
+    flex: 1 1 auto;
+    padding-top: 7px;
+  }
+}

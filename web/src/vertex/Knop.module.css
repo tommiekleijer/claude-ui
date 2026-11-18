@@ -1,0 +1,80 @@
+.knop {
+	all: unset;
+	box-sizing: border-box;
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	gap: var(--ruimte-2);
+	font: 600 15px/22px var(--tekst-familie);
+	white-space: nowrap;
+	cursor: pointer;
+	user-select: none;
+	transition:
+		filter 0.15s,
+		transform 0.15s,
+		background-color 0.15s;
+}
+.icoon {
+	display: inline-flex;
+}
+.l {
+	min-height: 52px;
+	padding: 12px var(--ruimte-6);
+	border-radius: var(--vorm-lg);
+	font-size: 17px;
+	line-height: 24px;
+}
+.m {
+	min-height: 44px;
+	padding: 10px var(--ruimte-5);
+	border-radius: 14px;
+}
+.s {
+	min-height: 32px;
+	padding: 4px var(--ruimte-3);
+	border-radius: var(--vorm-md);
+	font-size: 13px;
+	line-height: 18px;
+}
+.primair {
+	background: var(--verloop-accent);
+	color: var(--tekst-op-accent);
+	box-shadow: var(--schaduw-accent);
+}
+.secundair {
+	background: var(--accent-zacht);
+	color: var(--accent-standaard);
+}
+.tertiair {
+	color: var(--accent-standaard);
+}
+.destructief {
+	background: var(--status-negatief-zacht);
+	color: var(--status-negatief);
+}
+.primair:hover {
+	filter: brightness(1.08);
+}
+.secundair:hover,
+.destructief:hover {
+	filter: brightness(0.97);
+}
+.tertiair:hover {
+	background: var(--accent-zacht);
+}
+.knop:active {
+	transform: scale(0.97);
+}
+.knop:focus-visible {
+	outline: 2px solid var(--accent-standaard);
+	outline-offset: 2px;
+}
+.knop:disabled,
+.knop[aria-disabled='true'] {
+	background: var(--achtergrond-vlak);
+	color: var(--tekst-vaag);
+	box-shadow: none;
+	cursor: default;
+	transform: none;
+	filter: none;
+}

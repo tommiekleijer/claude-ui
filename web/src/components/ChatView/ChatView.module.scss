@@ -1,0 +1,195 @@
+@use '../../stijl';
+
+.area {
+  position: relative;
+  flex: 1 1 auto;
+  min-height: 0;
+}
+
+.scroller {
+  position: absolute;
+  inset: 0;
+  overflow-y: auto;
+}
+
+.quoteButton {
+  position: fixed;
+  z-index: 45;
+  border-radius: var(--vorm-pill);
+  box-shadow: var(--schaduw-hoogte-3);
+}
+
+.hidden {
+  visibility: hidden;
+  pointer-events: none;
+}
+
+.loading {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--accent-standaard);
+
+  svg {
+    animation: spin 0.8s linear infinite;
+  }
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.inner {
+  @include stijl.body;
+  display: flex;
+  flex-direction: column;
+  gap: var(--ruimte-3);
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: var(--ruimte-5) var(--ruimte-6) var(--ruimte-8);
+}
+
+.user {
+  align-self: flex-end;
+  max-width: 85%;
+  margin-top: var(--ruimte-2);
+  padding: var(--ruimte-3) var(--ruimte-4);
+  background: var(--app-vlak);
+  border: 1px solid var(--hoogte-1-rand);
+  border-radius: var(--vorm-lg) var(--vorm-lg) var(--ruimte-1) var(--vorm-lg);
+  box-shadow: var(--schaduw-hoogte-1);
+}
+
+.userText {
+  overflow-wrap: anywhere;
+}
+
+.images {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--ruimte-2);
+  margin-top: var(--ruimte-2);
+
+  img {
+    max-width: min(100%, 360px);
+    max-height: 260px;
+    border: 1px solid var(--hoogte-1-rand);
+    border-radius: var(--vorm-md);
+    cursor: zoom-in;
+  }
+}
+
+.attachments {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--ruimte-1);
+  margin-top: var(--ruimte-2);
+}
+
+.assistant {
+  min-width: 0;
+}
+
+.streaming > div > :last-child::after {
+  content: '';
+  display: inline-block;
+  width: 7px;
+  height: 15px;
+  margin-left: 2px;
+  vertical-align: -2px;
+  border-radius: 2px;
+  background: var(--accent-standaard);
+  animation: blink 1s steps(2) infinite;
+}
+
+.marker {
+  @include stijl.label;
+  display: flex;
+  align-items: center;
+  gap: var(--ruimte-3);
+  margin: var(--ruimte-2) 0;
+  color: var(--tekst-vaag);
+
+  &::before,
+  &::after {
+    content: '';
+    flex: 1 1 auto;
+    height: 1px;
+    background: var(--lijn-standaard);
+  }
+}
+
+.typing {
+  display: flex;
+  gap: 5px;
+  padding: var(--ruimte-2) 0;
+
+  span {
+    width: 7px;
+    height: 7px;
+    border-radius: 50%;
+    background: var(--accent-standaard);
+    animation: pulse 1.2s infinite ease-in-out;
+  }
+
+  span:nth-child(2) {
+    animation-delay: 0.15s;
+  }
+
+  span:nth-child(3) {
+    animation-delay: 0.3s;
+  }
+}
+
+.empty {
+  margin-top: 30vh;
+  color: var(--tekst-gedempt);
+  text-align: center;
+}
+
+@keyframes blink {
+  to {
+    visibility: hidden;
+  }
+}
+
+@keyframes pulse {
+  0%,
+  80%,
+  100% {
+    opacity: 0.25;
+  }
+
+  40% {
+    opacity: 1;
+  }
+}
+
+.queued {
+  border-style: dashed;
+  box-shadow: none;
+  opacity: 0.8;
+}
+
+.queuedBar {
+  @include stijl.label;
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: var(--ruimte-1);
+  margin-top: var(--ruimte-2);
+  color: var(--tekst-vaag);
+
+  > span {
+    margin-right: auto;
+  }
+}
+
+.dequeue {
+  @include stijl.mini-knop;
+  padding: 6px;
+}

@@ -1,0 +1,150 @@
+@use '../../stijl';
+
+.bar {
+  display: flex;
+  align-items: center;
+  gap: var(--ruimte-1);
+  flex: 0 0 auto;
+  height: var(--tabbalk-hoogte);
+  padding: 0 var(--ruimte-3);
+  overflow-x: auto;
+  background: var(--app-pagina);
+  border-bottom: 1px solid var(--lijn-standaard);
+  scrollbar-width: none;
+
+  &::-webkit-scrollbar {
+    display: none;
+  }
+
+  > :first-child {
+    margin-right: var(--ruimte-2);
+  }
+}
+
+.mac {
+  /* Ruimte voor de stoplichtknoppen van macOS; de lege ruimte in de balk sleept het venster. */
+  padding-left: 84px;
+  -webkit-app-region: drag;
+
+  > * {
+    -webkit-app-region: no-drag;
+  }
+}
+
+.tab {
+  @include stijl.klein;
+  display: flex;
+  transition: opacity 0.1s, background-color 0.15s;
+  flex: 0 1 320px;
+  align-items: center;
+  gap: var(--ruimte-2);
+  min-width: 140px;
+  height: 34px;
+  padding: 0 var(--ruimte-1) 0 var(--ruimte-3);
+  border: 1px solid transparent;
+  border-radius: var(--vorm-md);
+  color: var(--tekst-gedempt);
+  cursor: pointer;
+  user-select: none;
+
+  &:hover {
+    background: var(--achtergrond-vlak);
+    color: var(--tekst-hoofd);
+
+    .close {
+      opacity: 1;
+    }
+  }
+}
+
+.active,
+.active:hover {
+  background: var(--hoogte-2-vlak);
+  border-color: var(--hoogte-2-rand);
+  box-shadow: var(--schaduw-hoogte-1);
+  color: var(--tekst-hoofd);
+
+  .title {
+    font-weight: 600;
+  }
+
+  .close {
+    opacity: 1;
+  }
+}
+
+.dot {
+  flex: 0 0 8px;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--tekst-vaag);
+}
+
+.running {
+  background: var(--status-waarschuwing);
+  animation: pulse 1.2s ease-in-out infinite;
+}
+
+.waiting {
+  background: var(--status-negatief);
+}
+
+.unread {
+  background: var(--status-positief);
+  box-shadow: 0 0 0 3px var(--status-positief-zacht);
+}
+
+.title {
+  flex: 1 1 auto;
+  min-width: 0;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+.repo {
+  @include stijl.label;
+  flex: 0 1 auto;
+  max-width: 120px;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+  color: var(--tekst-vaag);
+}
+
+.close {
+  @include stijl.mini-knop;
+  opacity: 0;
+}
+
+@keyframes pulse {
+  50% {
+    opacity: 0.35;
+  }
+}
+
+.dragging {
+  opacity: 0.4;
+}
+
+.spacer {
+  flex: 1 0 var(--ruimte-2);
+}
+
+.settings {
+  position: relative;
+  display: inline-flex;
+}
+
+.updateDot {
+  position: absolute;
+  top: 3px;
+  right: 3px;
+  width: 9px;
+  height: 9px;
+  border: 2px solid var(--app-pagina);
+  border-radius: 50%;
+  background: var(--status-positief);
+  pointer-events: none;
+}

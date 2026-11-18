@@ -1,0 +1,41 @@
+.chip {
+	all: unset;
+	box-sizing: border-box;
+	display: inline-flex;
+	align-items: center;
+	gap: 5px;
+	padding: 4px 12px;
+	border-radius: var(--vorm-pill);
+	font: 600 12px/16px var(--tekst-familie);
+	white-space: nowrap;
+	max-width: 100%;
+	overflow: hidden;
+	text-overflow: ellipsis;
+}
+button.chip {
+	cursor: pointer;
+}
+button.chip:focus-visible {
+	outline: 2px solid var(--accent-standaard);
+	outline-offset: 2px;
+}
+.accent {
+	background: var(--accent-zacht);
+	color: var(--accent-standaard);
+}
+.positief {
+	background: var(--status-positief-zacht);
+	color: var(--status-positief);
+}
+.waarschuwing {
+	background: var(--status-waarschuwing-zacht);
+	color: var(--status-waarschuwing);
+}
+.neutraal {
+	background: var(--achtergrond-vlak);
+	color: var(--tekst-gedempt);
+}
+.negatief {
+	background: var(--status-negatief-zacht);
+	color: var(--status-negatief);
+}

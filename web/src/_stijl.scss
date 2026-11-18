@@ -1,0 +1,53 @@
+// Tekststijlen uit vertex/tokens.css (.tekst-*) als mixin, zodat CSS-modules ze kunnen gebruiken, plus gedeelde bouwstenen uit Vertex-tokens.
+@mixin subkop {
+  font: 600 17px/24px var(--tekst-familie);
+}
+
+@mixin body {
+  font: 400 15px/22px var(--tekst-familie);
+}
+
+@mixin body-vet {
+  font: 600 15px/22px var(--tekst-familie);
+}
+
+@mixin klein {
+  font: 400 13px/18px var(--tekst-familie);
+}
+
+@mixin label {
+  font: 600 12px/16px var(--tekst-familie);
+}
+
+// Kleine icoonknop zonder vlak (sluitkruisjes in tabs, bijlagen e.d.), waar een Icoonknop van 32px te groot is.
+@mixin mini-knop {
+  display: inline-flex;
+  flex: 0 0 auto;
+  align-items: center;
+  justify-content: center;
+  padding: 3px;
+  border: 0;
+  border-radius: 6px;
+  background: transparent;
+  color: var(--tekst-gedempt);
+  cursor: pointer;
+
+  &:hover {
+    background: var(--achtergrond-vlak);
+    color: var(--tekst-hoofd);
+  }
+
+  &:focus-visible {
+    outline: 2px solid var(--accent-standaard);
+    outline-offset: 1px;
+  }
+}
+
+// Menu/popover boven de inhoud (hoogte 3).
+@mixin popover {
+  background: color-mix(in srgb, var(--hoogte-3-vlak) 72%, transparent);
+  backdrop-filter: blur(24px) saturate(180%);
+  border: 1px solid var(--hoogte-3-rand);
+  border-radius: var(--vorm-md);
+  box-shadow: var(--schaduw-hoogte-3);
+}

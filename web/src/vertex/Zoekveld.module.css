@@ -1,0 +1,40 @@
+/* Svelte scoopt de losse input-selector op dit component; in een CSS-module gebeurt dat via .zoekveld. */
+.zoekveld {
+	display: flex;
+	align-items: center;
+	gap: var(--ruimte-2);
+	min-height: 46px;
+	padding: 0 var(--ruimte-4);
+	background: var(--hoogte-1-vlak);
+	border: 1px solid var(--lijn-standaard);
+	border-radius: var(--vorm-md);
+	color: var(--tekst-vaag);
+	transition:
+		border-color 0.15s,
+		box-shadow 0.15s;
+}
+.zoekveld:focus-within {
+	border-color: var(--accent-standaard);
+	box-shadow: 0 0 0 4px var(--accent-zacht);
+}
+.icoon {
+	display: inline-flex;
+	color: var(--accent-standaard);
+}
+.zoekveld input {
+	all: unset;
+	flex: 1;
+	min-width: 0;
+	font: 400 15px/22px var(--tekst-familie);
+	color: var(--tekst-hoofd);
+}
+.zoekveld input::placeholder {
+	color: var(--tekst-vaag);
+}
+.alleen-scherm-lezer {
+	position: absolute;
+	width: 1px;
+	height: 1px;
+	overflow: hidden;
+	clip: rect(0 0 0 0);
+}

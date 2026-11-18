@@ -1,0 +1,9 @@
+node_modules
+dist
+release
+electron/icon.icns
+out
+build/linux-backend
+TODO.md
+scripts/install.sh
+scripts/uninstall.sh

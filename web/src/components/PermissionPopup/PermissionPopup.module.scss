@@ -1,0 +1,16 @@
+@use '../../stijl';
+
+.icon {
+  color: var(--status-waarschuwing) !important;
+}
+
+.title {
+  @include stijl.body-vet;
+  margin: 0 0 var(--ruimte-2);
+}
+
+.reason {
+  @include stijl.klein;
+  margin: 0 0 var(--ruimte-3);
+  color: var(--tekst-gedempt);
+}

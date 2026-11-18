@@ -1,0 +1,158 @@
+@use '../../stijl';
+
+.updated {
+  @include stijl.label;
+  margin-left: auto;
+  color: var(--tekst-vaag);
+  font-weight: 400;
+}
+
+.empty {
+  @include stijl.klein;
+  margin: var(--ruimte-1);
+  color: var(--tekst-vaag);
+}
+
+.windows {
+  display: flex;
+  flex-direction: column;
+  gap: var(--ruimte-4);
+  margin: 0 0 var(--ruimte-5);
+  padding: 0;
+  list-style: none;
+}
+
+.row {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  margin-bottom: var(--ruimte-2);
+}
+
+.label {
+  @include stijl.body-vet;
+}
+
+.pct {
+  @include stijl.subkop;
+  font-variant-numeric: tabular-nums;
+}
+
+.bar {
+  height: 10px;
+  overflow: hidden;
+  border-radius: var(--vorm-pill);
+  background: var(--achtergrond-spoor);
+  border: 1px solid var(--lijn-standaard);
+
+  span {
+    display: block;
+    height: 100%;
+    border-radius: var(--vorm-pill);
+  }
+}
+
+.reset {
+  @include stijl.klein;
+  margin-top: var(--ruimte-1);
+  color: var(--tekst-vaag);
+}
+
+.ok {
+  color: var(--status-positief);
+}
+
+.warn {
+  color: var(--status-waarschuwing);
+}
+
+.bad {
+  color: var(--status-negatief);
+}
+
+.bar .ok {
+  background: var(--status-positief);
+}
+
+.bar .warn {
+  background: var(--status-waarschuwing);
+}
+
+.bar .bad {
+  background: var(--status-negatief);
+}
+
+.heading {
+  @include stijl.label;
+  margin: 0 0 var(--ruimte-3);
+  color: var(--tekst-gedempt);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.contributors {
+  display: flex;
+  flex-direction: column;
+  gap: var(--ruimte-2);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+
+  li {
+    @include stijl.klein;
+    display: grid;
+    grid-template-columns: 40px 88px 1fr;
+    align-items: center;
+    gap: var(--ruimte-2);
+  }
+}
+
+.contribPct {
+  color: var(--tekst-gedempt);
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+
+.contribBar {
+  height: 6px;
+  overflow: hidden;
+  border-radius: var(--vorm-pill);
+  background: var(--achtergrond-spoor);
+
+  span {
+    display: block;
+    height: 100%;
+    border-radius: var(--vorm-pill);
+    background: var(--accent-vlak);
+  }
+}
+
+.contribText {
+  color: var(--tekst-gedempt);
+}
+
+.notes {
+  @include stijl.klein;
+  margin: var(--ruimte-4) 0 0;
+  padding: 0;
+  list-style: none;
+  color: var(--tekst-vaag);
+}
+
+.section + .section {
+  margin-top: var(--ruimte-4);
+}
+
+.sectionTitle {
+  @include stijl.body-vet;
+  margin: 0 0 var(--ruimte-2);
+  color: var(--tekst-hoofd);
+}
+
+.tops {
+  @include stijl.klein;
+  margin: var(--ruimte-2) 0 0 48px;
+  padding: 0;
+  list-style: none;
+  color: var(--tekst-vaag);
+}

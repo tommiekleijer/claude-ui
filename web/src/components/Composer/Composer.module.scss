@@ -1,0 +1,193 @@
+@use '../../stijl';
+
+.wrapper {
+  flex: 0 0 auto;
+  padding: 0 var(--ruimte-6) var(--ruimte-4);
+}
+
+.box {
+  position: relative;
+  max-width: 1200px;
+  margin: 0 auto;
+  background: var(--app-invoer);
+  border: 1px solid var(--hoogte-2-rand);
+  border-radius: var(--vorm-xl);
+  box-shadow: var(--schaduw-hoogte-2);
+  transition: border-color 0.15s, box-shadow 0.15s;
+
+  &:focus-within {
+    border-color: var(--accent-standaard);
+    box-shadow: 0 0 0 4px var(--accent-zacht), var(--schaduw-hoogte-2);
+  }
+
+  textarea {
+    @include stijl.body;
+    display: block;
+    width: 100%;
+    min-height: 44px;
+    padding: var(--ruimte-3) var(--ruimte-5) var(--ruimte-1);
+    border: 0;
+    outline: none;
+    background: transparent;
+    color: var(--tekst-hoofd);
+    resize: none;
+
+    &::placeholder {
+      color: var(--tekst-vaag);
+    }
+  }
+}
+
+.dragging {
+  border-color: var(--accent-standaard);
+  border-style: dashed;
+}
+
+.chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--ruimte-1);
+  padding: var(--ruimte-3) var(--ruimte-4) 0;
+
+  img {
+    width: 16px;
+    height: 16px;
+    object-fit: cover;
+    border-radius: 4px;
+  }
+}
+
+.chipName {
+  min-width: 0;
+  max-width: 200px;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+  color: var(--tekst-hoofd);
+}
+
+.chipSize {
+  flex: 0 0 auto;
+  white-space: nowrap;
+  color: var(--tekst-vaag);
+}
+
+.miniKnop {
+  @include stijl.mini-knop;
+  padding: 2px;
+  margin-right: -6px;
+
+  &:hover {
+    color: var(--status-negatief);
+  }
+}
+
+.actions {
+  display: flex;
+  align-items: center;
+  gap: var(--ruimte-2);
+  padding: var(--ruimte-1) var(--ruimte-3) var(--ruimte-3);
+}
+
+.spacer {
+  flex: 1 1 auto;
+}
+
+.chipOpen {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  min-width: 0;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  cursor: zoom-in;
+
+  &:hover .chipName {
+    text-decoration: underline;
+  }
+}
+
+.suggestions {
+  @include stijl.popover;
+  position: absolute;
+  bottom: calc(100% + var(--ruimte-2));
+  left: 0;
+  right: 0;
+  z-index: 30;
+  max-height: 300px;
+  overflow-y: auto;
+  margin: 0;
+  padding: var(--ruimte-1);
+  list-style: none;
+
+  button {
+    @include stijl.klein;
+    display: flex;
+    align-items: baseline;
+    gap: var(--ruimte-3);
+    width: 100%;
+    padding: var(--ruimte-2) var(--ruimte-3);
+    border: 0;
+    border-radius: var(--vorm-sm);
+    background: transparent;
+    text-align: left;
+    cursor: pointer;
+  }
+}
+
+.suggestionActive {
+  background: var(--accent-zacht) !important;
+}
+
+.suggestionName {
+  flex: 0 0 auto;
+  color: var(--accent-standaard);
+  font-family: var(--font-mono);
+  font-size: 12.5px;
+  font-weight: 600;
+}
+
+.suggestionDesc {
+  min-width: 0;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+  color: var(--tekst-gedempt);
+}
+
+.shellMode,
+.shellMode:focus-within {
+  border-color: var(--status-waarschuwing);
+  box-shadow: 0 0 0 4px var(--status-waarschuwing-zacht), var(--schaduw-hoogte-2);
+
+  textarea {
+    font-family: var(--font-mono);
+    font-size: 14px;
+  }
+}
+
+.hint {
+  @include stijl.popover;
+  @include stijl.klein;
+  display: flex;
+  align-items: center;
+  gap: var(--ruimte-2);
+  max-width: 1200px;
+  margin: 0 auto var(--ruimte-2);
+  padding: var(--ruimte-1) var(--ruimte-2) var(--ruimte-1) var(--ruimte-4);
+  color: var(--tekst-gedempt);
+
+  > span {
+    flex: 1 1 auto;
+  }
+
+  code {
+    color: var(--accent-standaard);
+    font-family: var(--font-mono);
+  }
+
+  .miniKnop {
+    margin-right: 0;
+  }
+}

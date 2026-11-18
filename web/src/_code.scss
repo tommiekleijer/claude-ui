@@ -1,0 +1,22 @@
+@mixin block($vlak: var(--app-code)) {
+  font-family: var(--font-mono);
+  font-size: 12.5px;
+  line-height: 1.6;
+  background: $vlak;
+  color: var(--tekst-hoofd);
+  border: 1px solid var(--lijn-standaard);
+  border-radius: var(--vorm-md);
+  padding: var(--ruimte-3) var(--ruimte-4);
+  overflow-x: auto;
+  white-space: pre;
+  margin: 0;
+}
+
+@mixin inline {
+  font-family: var(--font-mono);
+  font-size: 0.86em;
+  background: var(--accent-zacht);
+  color: var(--accent-standaard);
+  border-radius: 6px;
+  padding: 1px 6px;
+}

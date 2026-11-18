@@ -1,0 +1,154 @@
+@use '../../stijl';
+
+.backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 55;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: var(--ruimte-6);
+  background: var(--schaduw-kleur);
+  backdrop-filter: blur(12px) saturate(140%);
+}
+
+.window {
+  display: flex;
+  flex-direction: column;
+  width: min(1100px, 100%);
+  height: min(720px, 100%);
+  overflow: hidden;
+  border: 1px solid var(--hoogte-4-rand);
+  border-radius: var(--vorm-xl);
+  background: var(--hoogte-1-vlak);
+  box-shadow: var(--schaduw-hoogte-4);
+}
+
+.header {
+  @include stijl.klein;
+  display: flex;
+  align-items: center;
+  gap: var(--ruimte-2);
+  padding: var(--ruimte-2) var(--ruimte-2) var(--ruimte-2) var(--ruimte-3);
+  border-bottom: 1px solid var(--lijn-standaard);
+  background: var(--achtergrond-kaart-2);
+  color: var(--tekst-gedempt);
+}
+
+.tabs {
+  display: flex;
+  flex: 1 1 auto;
+  align-items: center;
+  gap: var(--ruimte-1);
+  min-width: 0;
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+
+.tab {
+  display: flex;
+  flex: 0 1 220px;
+  align-items: center;
+  gap: var(--ruimte-2);
+  min-width: 90px;
+  height: 32px;
+  padding: 0 var(--ruimte-1) 0 var(--ruimte-3);
+  border: 1px solid transparent;
+  border-radius: var(--vorm-sm);
+  color: var(--tekst-gedempt);
+  font-family: var(--font-mono);
+  font-size: 12px;
+  cursor: pointer;
+
+  &:hover {
+    background: var(--achtergrond-vlak);
+    color: var(--tekst-hoofd);
+  }
+
+  svg {
+    flex: 0 0 auto;
+  }
+}
+
+.tabActive,
+.tabActive:hover {
+  background: var(--hoogte-2-vlak);
+  border-color: var(--hoogte-2-rand);
+  box-shadow: var(--schaduw-hoogte-1);
+  color: var(--tekst-hoofd);
+
+  > svg {
+    color: var(--accent-standaard);
+  }
+}
+
+.tabTitle {
+  flex: 1 1 auto;
+  min-width: 0;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+.tabClose {
+  @include stijl.mini-knop;
+  padding: 2px;
+  color: inherit;
+
+  &:hover {
+    color: var(--status-negatief);
+  }
+}
+
+.views {
+  position: relative;
+  flex: 1 1 auto;
+  min-height: 0;
+}
+
+.terminal {
+  position: absolute;
+  inset: 0;
+  padding: var(--ruimte-2) var(--ruimte-3);
+}
+
+.hidden {
+  visibility: hidden;
+}
+
+/* Ingeklapt: paneel rechts naast de chat (App maakt ruimte via .withDock). */
+.dock {
+  position: fixed;
+  /* relatief anker voor de sleepbalk */
+  top: var(--tabbalk-hoogte);
+  right: 0;
+  bottom: var(--statusbalk-hoogte);
+  z-index: 20;
+  display: flex;
+  width: var(--dock-width);
+  border-left: 1px solid var(--hoogte-1-rand);
+
+  .window {
+    width: 100%;
+    height: 100%;
+    border: 0;
+    border-radius: 0;
+    box-shadow: none;
+  }
+}
+
+.resizer {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: -3px;
+  z-index: 1;
+  width: 6px;
+  cursor: col-resize;
+  transition: background-color 0.15s;
+
+  &:hover,
+  &:active {
+    background: var(--accent-standaard);
+  }
+}
