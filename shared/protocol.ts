@@ -107,6 +107,7 @@ export type ServerEvent =
   | { type: 'running'; running: boolean }
   /** Een beurt die niet door een bericht van de gebruiker begon. */
   | { type: 'turn_started'; reason: string }
+  | { type: 'marker'; text: string }
   | { type: 'prompt_suggestion'; suggestion: string }
   | { type: 'tasks'; tasks: TaskInfo[] }
   | { type: 'sub_activity'; parentId: string; id: string; kind: 'tool' | 'text'; label: string }

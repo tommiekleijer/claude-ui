@@ -1,5 +1,5 @@
 import { ArrowUp, Clock, Loader2, Mic, Paperclip, Quote, Square, X } from 'lucide-react';
-import { ClipboardEvent, DragEvent, FormEvent, KeyboardEvent, useEffect, useLayoutEffect, useRef, useState } from 'react';
+import { ClipboardEvent, DragEvent, FormEvent, KeyboardEvent, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import type { Attachment } from '../../../../shared/protocol';
 import { native, NativeFile } from '../../native';
 import {
@@ -8,6 +8,7 @@ import {
   clearQuote,
   clearTerminalHint,
   enqueue,
+  getTab,
   notify,
   openTerminal,
   openUsage,
@@ -110,6 +111,10 @@ const Composer = () => {
   const [dictation, setDictation] = useState<'idle' | 'recording' | 'working'>('idle');
   const [dictationStatus, setDictationStatus] = useState('');
   const [quotes, setQuotes] = useState<string[]>([]);
+  // Pijl omhoog/omlaag in een leeg (of teruggehaald) invoerveld: eerdere berichten uit deze chat, nieuwste eerst.
+  const chatItems = useStore((s) => s.items);
+  const sentTexts = useMemo(() => chatItems.flatMap((i) => (i.kind === 'user' && i.text ? [i.text] : [])), [chatItems]);
+  const [historyIndex, setHistoryIndex] = useState<number | null>(null);
   const recording = useRef<Recording | null>(null);
   const drafts = useRef(new Map<number, { text: string; attachments: PendingAttachment[]; quotes: string[] }>());
   const shownTab = useRef(activeId);
@@ -169,6 +174,18 @@ const Composer = () => {
         focus();
       }
     };
+    // Esc onderbreekt Claude (zoals in Claude Code), behalve als Esc al iets anders sluit: een venster, de zoekbalk, een lijst.
+    const handleEscape = (event: globalThis.KeyboardEvent) => {
+      if (
+        event.key === 'Escape' &&
+        !event.defaultPrevented &&
+        getTab(useApp.getState().activeId)?.store.getState().running &&
+        !document.querySelector('[role=dialog], [role=listbox], [role=search]') &&
+        !(event.target as Element | null)?.closest?.('.xterm')
+      ) {
+        send({ type: 'interrupt' });
+      }
+    };
     const handleInsert = (event: Event) => {
       const value = (event as CustomEvent<string>).detail;
       setText((current) => (current.trim() ? `${current} ${value}` : value));
@@ -176,11 +193,13 @@ const Composer = () => {
     };
     window.addEventListener('click', handleClick);
     window.addEventListener('keydown', handleKey);
+    window.addEventListener('keydown', handleEscape);
     window.addEventListener('composer-insert', handleInsert);
     window.addEventListener('composer-focus', focus);
     return () => {
       window.removeEventListener('click', handleClick);
       window.removeEventListener('keydown', handleKey);
+      window.removeEventListener('keydown', handleEscape);
       window.removeEventListener('composer-insert', handleInsert);
       window.removeEventListener('composer-focus', focus);
     };
@@ -344,7 +363,21 @@ const Composer = () => {
         }
       }
       if (event.key === 'Escape') {
+        event.preventDefault();
         setSuggestDismissed(true);
+        return;
+      }
+    }
+    if ((event.key === 'ArrowUp' || event.key === 'ArrowDown') && !event.shiftKey && !event.ctrlKey && !event.metaKey && !event.altKey) {
+      const browsing = historyIndex !== null && text === sentTexts[sentTexts.length - 1 - historyIndex];
+      if ((text === '' || browsing) && sentTexts.length > 0) {
+        const next = event.key === 'ArrowUp' ? Math.min((browsing ? historyIndex : -1) + 1, sentTexts.length - 1) : (browsing ? historyIndex : 0) - 1;
+        if (event.key === 'ArrowDown' && !browsing) {
+          return;
+        }
+        event.preventDefault();
+        setHistoryIndex(next < 0 ? null : next);
+        setText(next < 0 ? '' : sentTexts[sentTexts.length - 1 - next]);
         return;
       }
     }

@@ -720,6 +720,9 @@ const applyEvent = (tab: Tab, event: ServerEvent) => {
     case 'turn_started':
       set((s) => ({ items: [...s.items, { kind: 'marker', id: `turn-${Date.now()}`, text: event.reason }] }));
       return;
+    case 'marker':
+      set((s) => ({ items: [...s.items, { kind: 'marker', id: `marker-${Date.now()}`, text: event.text }] }));
+      return;
     case 'tasks':
       set({ tasks: event.tasks });
       return;

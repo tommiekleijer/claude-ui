@@ -4,6 +4,7 @@ import type { ChatItem } from '../../../../shared/protocol';
 import { dequeue, imageUrls, prioritize, TabIdContext, useApp, useTabState } from '../../store';
 import ImagePreview from '../ui/ImagePreview';
 import Markdown from '../Markdown/Markdown';
+import ChatSearch from './ChatSearch';
 import QuoteButton from './QuoteButton';
 import ToolCard from '../ToolCard/ToolCard';
 import { Chip, Knop } from '../../vertex';
@@ -197,6 +198,7 @@ export const ChatArea = () => {
   return (
     <div className={styles.area}>
       <QuoteButton />
+      <ChatSearch />
       {live.map((id) => (
         <ChatView key={id} tabId={id} active={id === activeId} />
       ))}

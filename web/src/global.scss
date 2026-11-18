@@ -131,3 +131,13 @@ textarea {
 .hljs-params {
   color: var(--categorie-mint-tekst);
 }
+
+/* Zoeken in de chat (Ctrl+F); de markeringen komen uit de CSS Highlight API. */
+::highlight(zoek) {
+  background-color: color-mix(in srgb, var(--status-waarschuwing) 35%, transparent);
+}
+
+::highlight(zoek-actief) {
+  background-color: var(--accent-vlak);
+  color: var(--tekst-op-accent);
+}

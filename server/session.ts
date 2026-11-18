@@ -524,6 +524,13 @@ export class ClaudeSession {
             permissionMode: message.permissionMode,
             apiKeySource: message.apiKeySource,
           });
+        } else if (message.subtype === 'compact_boundary') {
+          const { trigger, pre_tokens, post_tokens } = message.compact_metadata;
+          const tokens = (n: number) => `${Math.round(n / 1000)}k`;
+          this.send({
+            type: 'marker',
+            text: `${trigger === 'auto' ? 'Automatisch samengevat' : 'Gesprek samengevat'} (${tokens(pre_tokens)}${post_tokens ? ` → ${tokens(post_tokens)}` : ''} tokens)`,
+          });
         } else if (message.subtype === 'status' && message.permissionMode && message.permissionMode !== this.settings.mode) {
           // Claude Code wisselt zelf van modus, bv. na het goedkeuren van een plan (ExitPlanMode).
           this.settings.mode = message.permissionMode;

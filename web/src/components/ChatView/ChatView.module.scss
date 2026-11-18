@@ -19,6 +19,38 @@
   box-shadow: var(--schaduw-hoogte-3);
 }
 
+.search {
+  @include stijl.popover;
+  @include stijl.klein;
+  position: absolute;
+  top: var(--ruimte-3);
+  right: var(--ruimte-5);
+  z-index: 30;
+  display: flex;
+  align-items: center;
+  gap: var(--ruimte-2);
+  padding: var(--ruimte-1) var(--ruimte-2) var(--ruimte-1) var(--ruimte-3);
+  color: var(--tekst-gedempt);
+
+  input {
+    width: 200px;
+    border: 0;
+    outline: none;
+    background: transparent;
+    color: var(--tekst-hoofd);
+  }
+}
+
+.searchCount {
+  min-width: 80px;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+.searchButton {
+  @include stijl.mini-knop;
+}
+
 .hidden {
   visibility: hidden;
   pointer-events: none;
