@@ -1,8 +1,11 @@
 import type { ChatItem } from '../../shared/protocol';
-import { currentTab, notify, openConfig, openManage, openSettings, setSidebarOpen } from './store';
+import { currentTab, notify, openConfig, openManage, openSettings, openTerminal, setSidebarOpen, useApp } from './store';
 
 /** Commands die in Claude Code alleen in de terminal werken; de app handelt ze zelf af. */
 export const localCommands = [
+  { name: 'login', description: 'Inloggen met je Claude-account (opent de terminal)' },
+  { name: 'logout', description: 'Uitloggen (opent de terminal)' },
+  { name: 'plugin', description: 'Plugins beheren (opent de terminal)' },
   { name: 'help', description: 'Alle commands en skills' },
   { name: 'status', description: 'Model, modus, map en MCP-servers' },
   { name: 'memory', description: 'CLAUDE.md-bestanden bewerken' },
@@ -72,7 +75,19 @@ const notApplicable: Record<string, string> = {
   'add-dir': 'Extra mappen toevoegen (/add-dir) kan nog niet in de app.',
 };
 
+/** Commands die de echte Claude Code nodig hebben (inlogflow, plugin-beheer): in de ingebouwde terminal. */
+const inTerminal = (command: string) => () => {
+  if (useApp.getState().terminalAvailable) {
+    openTerminal([command]);
+  } else {
+    notify(`${command} werkt alleen in de terminal, en de ingebouwde terminal is hier niet beschikbaar.`);
+  }
+};
+
 const actions: Record<string, () => void> = {
+  login: inTerminal('/login'),
+  logout: inTerminal('/logout'),
+  plugin: inTerminal('/plugin'),
   help: () => openManage('commands'),
   agents: () => openManage('agents'),
   status,
