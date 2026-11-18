@@ -97,6 +97,7 @@ const Composer = () => {
   const [dragging, setDragging] = useState(false);
   const [previewing, setPreviewing] = useState<PendingAttachment | null>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
+  const lastEscape = useRef(0);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const queue = useStore((s) => s.queue);
   const blocked = useApp((s) => s.previewOpen > 0);
@@ -356,6 +357,18 @@ const Composer = () => {
   };
 
   const handleKeyDown = (event: KeyboardEvent<HTMLTextAreaElement>) => {
+    // Twee keer snel Esc maakt het invoerveld leeg, zoals in Claude Code.
+    if (event.key === 'Escape' && !event.repeat) {
+      const now = Date.now();
+      if (text && now - lastEscape.current < 500) {
+        event.preventDefault();
+        lastEscape.current = 0;
+        setText('');
+        setHistoryIndex(null);
+        return;
+      }
+      lastEscape.current = now;
+    }
     if (suggestions.length > 0) {
       if (event.key === 'ArrowDown' || event.key === 'ArrowUp') {
         event.preventDefault();
