@@ -19,8 +19,9 @@
 .row {
   display: flex;
   align-items: center;
+  flex-wrap: wrap;
   justify-content: space-between;
-  gap: var(--ruimte-5);
+  gap: var(--ruimte-3) var(--ruimte-5);
   padding: var(--ruimte-3) 0;
   border-bottom: 1px solid var(--lijn-standaard);
 
@@ -31,6 +32,7 @@
 
 .rowText {
   display: flex;
+  flex: 1 1 16rem;
   flex-direction: column;
   gap: 2px;
   min-width: 0;
@@ -48,6 +50,8 @@
 .control {
   display: flex;
   flex: 0 0 auto;
+  max-width: 100%;
+  margin-left: auto;
   align-items: center;
   gap: var(--ruimte-3);
 }

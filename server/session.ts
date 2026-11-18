@@ -575,6 +575,9 @@ export class ClaudeSession {
         const slash = this.lastPrompt.trim().match(/^\/[\w:-]+/)?.[0];
         if (slash && /isn't available in this environment|in the terminal for details/i.test(resultText)) {
           this.send({ type: 'needs_terminal', command: this.lastPrompt.trim() });
+        } else if (/please run \/login|not logged in|invalid api key/i.test(`${resultText} ${JSON.stringify((message as { errors?: unknown }).errors ?? '')}`)) {
+          // Niet (meer) ingelogd: meteen de inlogflow openen in plaats van alleen een foutmelding.
+          this.send({ type: 'needs_terminal', command: '/login' });
         }
         const usage = { input: 0, output: 0, cacheRead: 0, cacheCreation: 0 };
         for (const model of Object.values(message.modelUsage ?? {})) {

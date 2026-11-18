@@ -76,6 +76,18 @@ export type ModelOption = { value: string; label: string; efforts: Effort[] };
 export type LimitWindow = { percentage: number; resetsAt: number };
 export type Limits = { fiveHour?: LimitWindow; sevenDay?: LimitWindow };
 
+export type MemoryFile = { label: string; path: string; exists: boolean; content: string };
+export type ScopeSettings = {
+  scope: 'user' | 'project' | 'local';
+  path: string;
+  allow: string[];
+  ask: string[];
+  deny: string[];
+  hooks: { event: string; matcher: string; command: string }[];
+  error?: string;
+};
+export type ConfigInfo = { memory: MemoryFile[]; scopes: ScopeSettings[] };
+
 export type ServerEvent =
   | { type: 'hello'; apiKeyPresent: boolean; recent: string[]; root: string; models: ModelOption[]; limits: Limits; tabs: SavedTabs; ui: UiSettings; terminal: boolean }
   | ({ type: 'settings' } & Settings)
@@ -112,6 +124,7 @@ export type ServerEvent =
   | { type: 'tasks'; tasks: TaskInfo[] }
   | { type: 'sub_activity'; parentId: string; id: string; kind: 'tool' | 'text'; label: string }
   | ({ type: 'manage' } & ManageInfo)
+  | ({ type: 'config' } & ConfigInfo)
   | { type: 'task_output'; taskId: string; output: string }
   | { type: 'subagent'; toolUseId: string; items: ChatItem[]; live?: boolean }
   | { type: 'question'; id: string; questions: Question[] }
@@ -151,6 +164,9 @@ export type ClientEvent =
   | { type: 'stop_task'; taskId: string }
   | { type: 'task_output'; taskId: string }
   | { type: 'manage' }
+  | { type: 'config' }
+  | { type: 'save_memory'; path: string; content: string }
+  | { type: 'permission_rule'; scope: ScopeSettings['scope']; list: 'allow' | 'ask' | 'deny'; rule: string; remove: boolean }
   | { type: 'usage' }
   | { type: 'subagent'; toolUseId: string }
   | { type: 'mcp_toggle'; name: string; enabled: boolean }

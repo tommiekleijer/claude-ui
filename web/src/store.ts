@@ -4,6 +4,7 @@ import type {
   Attachment,
   ChatItem,
   ClientEvent,
+  ConfigInfo,
   Effort,
   Limits,
   ManageInfo,
@@ -42,6 +43,9 @@ type AppState = {
   tabIds: number[];
   activeId: number;
   manageOpen: boolean;
+  manageSection: 'mcp' | 'commands' | 'agents';
+  configOpen: 'memory' | 'permissions' | 'hooks' | null;
+  config: ConfigInfo | null;
   usageReport: UsageReport | null;
   usageOpen: boolean;
   sidebarOpen: boolean;
@@ -267,6 +271,9 @@ export const useApp = create<AppState>()(() => ({
   tabIds: [],
   activeId: 0,
   manageOpen: false,
+  manageSection: 'mcp',
+  configOpen: null,
+  config: null,
   usageReport: null,
   usageOpen: false,
   sidebarOpen: true,
@@ -409,6 +416,17 @@ export const openUsage = () => {
 };
 export const closeUsage = () => useApp.setState({ usageOpen: false });
 export const setManageOpen = (manageOpen: boolean) => useApp.setState({ manageOpen });
+export const openManage = (manageSection: 'mcp' | 'commands' | 'agents') => useApp.setState({ manageOpen: true, manageSection });
+export const openConfig = (configOpen: 'memory' | 'permissions' | 'hooks') => {
+  useApp.setState({ configOpen });
+  send({ type: 'config' });
+};
+export const closeConfig = () => useApp.setState({ configOpen: null });
+export const setSidebarOpen = (sidebarOpen: boolean) => {
+  useApp.setState({ sidebarOpen });
+  saveUi();
+};
+export const currentTab = () => activeTab().store.getState();
 
 /** Zet tekst in het invoerveld van het actieve tabblad (bv. een slash-command). */
 export const insertInComposer = (text: string) => window.dispatchEvent(new CustomEvent('composer-insert', { detail: text }));
@@ -720,6 +738,9 @@ const applyEvent = (tab: Tab, event: ServerEvent) => {
     case 'turn_started':
       set((s) => ({ items: [...s.items, { kind: 'marker', id: `turn-${Date.now()}`, text: event.reason }] }));
       return;
+    case 'config':
+      useApp.setState({ config: { memory: event.memory, scopes: event.scopes } });
+      return;
     case 'marker':
       set((s) => ({ items: [...s.items, { kind: 'marker', id: `marker-${Date.now()}`, text: event.text }] }));
       return;
@@ -765,6 +786,13 @@ const applyEvent = (tab: Tab, event: ServerEvent) => {
       }));
       return;
     case 'needs_terminal':
+      // /mcp heeft een eigen venster in de app (Beheer).
+      if (/^\/mcp\s*$/.test(event.command)) {
+        if (useApp.getState().activeId === tab.id) {
+          useApp.setState({ manageOpen: true });
+        }
+        return;
+      }
       // Interactief /-command: in het actieve tabblad meteen in de terminal openen, anders een melding bij het tabblad.
       if (useApp.getState().activeId === tab.id && useApp.getState().terminalAvailable) {
         const [command, ...rest] = event.command.split(/\s+/);

@@ -146,9 +146,9 @@ ipcMain.handle('clipboard-image', () => {
   const data = image.toPNG();
   return [{ kind: 'image' as const, name: `plakken-${Date.now()}.png`, mediaType: 'image/png', data: data.toString('base64'), size: data.length }];
 });
-ipcMain.handle('pick-folder', async (event) => {
+ipcMain.handle('pick-folder', async (event, title?: string) => {
   const win = BrowserWindow.fromWebContents(event.sender);
-  const options = { title: 'Standaardmap kiezen', properties: ['openDirectory' as const] };
+  const options = { title: title ?? 'Map kiezen', properties: ['openDirectory' as const] };
   const result = win ? await dialog.showOpenDialog(win, options) : await dialog.showOpenDialog(options);
   return result.canceled || !result.filePaths[0] ? null : toBackendPath(result.filePaths[0]);
 });
@@ -228,7 +228,9 @@ const createWindow = async () => {
 };
 
 // Dezelfde profielmap als de backend-config (~/.config/claude-ui), ongeacht de productnaam.
-app.setPath('userData', path.join(app.getPath('appData'), 'claude-ui'));
+// Dev-versie (CLAUDE_UI_DEV_URL) krijgt een eigen profielmap, zodat hij naast een geïnstalleerde versie kan draaien
+// (anders houdt die de single-instance-lock vast en sluit de dev-versie meteen).
+app.setPath('userData', path.join(app.getPath('appData'), process.env.CLAUDE_UI_DEV_URL ? 'claude-ui-dev' : 'claude-ui'));
 
 // Linux (X11/XWayland) heeft deze schakelaar nodig voor doorzichtige vensters.
 if (process.platform === 'linux') {

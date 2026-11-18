@@ -6,7 +6,7 @@ contextBridge.exposeInMainWorld('claudeUi', {
     const files = await ipcRenderer.invoke('read-paths', await ipcRenderer.invoke('clipboard-paths'));
     return files.length ? files : ipcRenderer.invoke('clipboard-image');
   },
-  pickFolder: () => ipcRenderer.invoke('pick-folder'),
+  pickFolder: (title) => ipcRenderer.invoke('pick-folder', title),
   openPath: (filePath) => ipcRenderer.invoke('open-path', filePath),
   showInFolder: (filePath) => ipcRenderer.send('show-in-folder', filePath),
   notify: (title, body, tabId) => ipcRenderer.send('notify', { title, body, tabId }),

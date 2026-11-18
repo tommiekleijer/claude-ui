@@ -1,3 +1,4 @@
+import { localCommands, runLocalCommand } from '../../localCommands';
 import { ArrowUp, Clock, Loader2, Mic, Paperclip, Quote, Square, X } from 'lucide-react';
 import { ClipboardEvent, DragEvent, FormEvent, KeyboardEvent, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import type { Attachment } from '../../../../shared/protocol';
@@ -16,6 +17,7 @@ import {
   runShellCommand,
   send,
   setLastSent,
+  setManageOpen,
   useApp,
   useStore,
 } from '../../store';
@@ -95,6 +97,7 @@ const Composer = () => {
   const [dragging, setDragging] = useState(false);
   const [previewing, setPreviewing] = useState<PendingAttachment | null>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
+  const lastEscape = useRef(0);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const queue = useStore((s) => s.queue);
   const blocked = useApp((s) => s.previewOpen > 0);
@@ -215,7 +218,7 @@ const Composer = () => {
   }, [Boolean(slash), hasManage, cwd]);
   const suggestions =
     slash && !suggestDismissed && commands
-      ? commands.filter((c) => c.name.toLowerCase().startsWith(slash[1].toLowerCase())).slice(0, 8)
+      ? [...commands, ...localCommands.filter((l) => !commands.some((c) => c.name === l.name))].filter((c) => c.name.toLowerCase().startsWith(slash[1].toLowerCase())).slice(0, 8)
       : [];
   const complete = (name: string) => {
     setText(`/${name} `);
@@ -310,6 +313,13 @@ const Composer = () => {
         openUsage();
         return true;
       }
+      if (runLocalCommand(trimmed)) {
+        return true;
+      }
+      if (trimmed === '/mcp') {
+        setManageOpen(true);
+        return true;
+      }
       if (trimmed === '/clear') {
         clearConversation();
         return true;
@@ -347,6 +357,18 @@ const Composer = () => {
   };
 
   const handleKeyDown = (event: KeyboardEvent<HTMLTextAreaElement>) => {
+    // Twee keer snel Esc maakt het invoerveld leeg, zoals in Claude Code.
+    if (event.key === 'Escape' && !event.repeat) {
+      const now = Date.now();
+      if (text && now - lastEscape.current < 500) {
+        event.preventDefault();
+        lastEscape.current = 0;
+        setText('');
+        setHistoryIndex(null);
+        return;
+      }
+      lastEscape.current = now;
+    }
     if (suggestions.length > 0) {
       if (event.key === 'ArrowDown' || event.key === 'ArrowUp') {
         event.preventDefault();
