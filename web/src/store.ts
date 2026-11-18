@@ -52,6 +52,8 @@ type AppState = {
   /** Eigen accentkleur (#rrggbb); null = het standaard paars van Vertex. */
   accent: string | null;
   settingsOpen: boolean;
+  /** Aantal open fotovoorbeelden; zolang er een open is, kun je niet typen of versturen. */
+  previewOpen: number;
   speechLanguage: SpeechLanguage;
   speechModel: SpeechModel;
   /** Status van het zoeken naar een nieuwe versie (alleen in de app). */
@@ -236,6 +238,8 @@ export const setSpeech = (settings: { speechLanguage?: SpeechLanguage; speechMod
   saveUi();
 };
 
+export const trackPreview = (delta: 1 | -1) => useApp.setState((s) => ({ previewOpen: Math.max(0, s.previewOpen + delta) }));
+
 export const openSettings = () => useApp.setState({ settingsOpen: true });
 export const closeSettings = () => useApp.setState({ settingsOpen: false });
 
@@ -271,6 +275,7 @@ export const useApp = create<AppState>()(() => ({
   meldingen: true,
   accent: null,
   settingsOpen: false,
+  previewOpen: 0,
   speechLanguage: 'nl',
   speechModel: 'base',
   update: null,

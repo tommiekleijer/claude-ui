@@ -1,10 +1,16 @@
 import { X } from 'lucide-react';
 import { useEffect } from 'react';
 import { createPortal } from 'react-dom';
+import { trackPreview } from '../../store';
 import { Icoonknop } from '../../vertex';
 import styles from './ui.module.scss';
 
 const ImagePreview = ({ src, name, onClose }: { src: string; name: string; onClose: () => void }) => {
+  useEffect(() => {
+    trackPreview(1);
+    return () => trackPreview(-1);
+  }, []);
+
   useEffect(() => {
     const handleKey = (event: KeyboardEvent) => event.key === 'Escape' && onClose();
     window.addEventListener('keydown', handleKey);

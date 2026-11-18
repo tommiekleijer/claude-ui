@@ -95,7 +95,8 @@ const Composer = () => {
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const queue = useStore((s) => s.queue);
-  const canSend = Boolean(cwd) && connected && (text.trim().length > 0 || attachments.length > 0);
+  const blocked = useApp((s) => s.previewOpen > 0);
+  const canSend = Boolean(cwd) && !blocked && connected && (text.trim().length > 0 || attachments.length > 0);
   const activeId = useApp((s) => s.activeId);
   const pickerOpen = useApp((s) => s.pickerOpen);
   const manageOpen = useApp((s) => s.manageOpen);
@@ -146,10 +147,10 @@ const Composer = () => {
 
   // Focus zo veel mogelijk terug naar het invoerveld: na wisselen, na dialogen, na klikken op knoppen en bij typen.
   useEffect(() => {
-    if (!pickerOpen && !manageOpen && !hasPermission) {
+    if (!pickerOpen && !manageOpen && !hasPermission && !blocked) {
       requestAnimationFrame(focus);
     }
-  }, [activeId, pickerOpen, manageOpen, hasPermission, cwd, running]);
+  }, [activeId, pickerOpen, manageOpen, hasPermission, blocked, cwd, running]);
 
   useEffect(() => {
     const isEditable = (el: Element | null) =>
@@ -496,7 +497,7 @@ const Composer = () => {
           aria-label="Bericht aan Claude"
           placeholder={!cwd ? 'Kies eerst een project' : promptSuggestion ? `${promptSuggestion}  ⇥ Tab` : 'Bericht aan Claude…  (Enter versturen, Shift+Enter nieuwe regel, Ctrl+V plakken, ! voor een shell-commando)'}
           value={text}
-          disabled={!cwd}
+          disabled={!cwd || blocked}
           onChange={(event) => {
             setText(event.target.value);
             setSuggestIndex(0);
