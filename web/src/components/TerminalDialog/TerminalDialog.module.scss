@@ -109,7 +109,19 @@
 .terminal {
   position: absolute;
   inset: 0;
-  padding: var(--ruimte-2) var(--ruimte-3);
+
+  /* De opvulling hoort op .xterm: de fit-functie van xterm trekt alleen die af, niet die van de ouder.
+     Zat ze op de ouder, dan kreeg de terminal een regel te veel en viel de onderste regel buiten beeld. */
+  /* Geen eigen achtergrond voor xterm: anders ligt hij als donkerder vlak over het (deels doorzichtige) paneel en krijgt de opvulling een rand. */
+  :global(.xterm-viewport) {
+    background-color: transparent !important;
+  }
+
+  :global(.xterm) {
+    box-sizing: border-box;
+    height: 100%;
+    padding: var(--ruimte-2) var(--ruimte-3);
+  }
 }
 
 .hidden {
