@@ -1,0 +1,87 @@
+name: Release
+
+# Een tag (bijv. v1.0.1) bouwt de installers voor Linux, macOS en Windows en zet ze als release op GitHub.
+on:
+  push:
+    tags: ['v*']
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  # De Windows-app draait zijn backend in WSL; die Linux-bundel (Node + backend) wordt hier gebouwd en meegeleverd.
+  linux-backend:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - run: npm ci
+      - run: npm run build
+      - name: Linux-bundel maken
+        run: |
+          mkdir -p build/linux-backend
+          cp package.json package-lock.json build/linux-backend/
+          cp -r dist build/linux-backend/dist
+          rm -rf build/linux-backend/dist/electron
+          (cd build/linux-backend && npm ci --omit=dev --ignore-scripts=false)
+          cp "$(command -v node)" build/linux-backend/node
+          tar czf linux-backend.tgz -C build linux-backend
+      - uses: actions/upload-artifact@v4
+        with:
+          name: linux-backend
+          path: linux-backend.tgz
+
+  linux:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - run: npm ci
+      - run: npm run build
+      - run: npx electron-builder --linux --publish always
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+  mac:
+    strategy:
+      matrix:
+        os: [macos-latest, macos-15-intel]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - run: npm ci
+      - run: npm run build
+      - run: npx electron-builder --mac --publish always
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          CSC_IDENTITY_AUTO_DISCOVERY: 'false'
+
+  windows:
+    needs: linux-backend
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - uses: actions/download-artifact@v4
+        with:
+          name: linux-backend
+      - name: Linux-bundel uitpakken
+        shell: bash
+        run: |
+          mkdir -p build
+          tar xzf linux-backend.tgz -C build
+      - run: npm ci
+      - run: npm run build
+      - run: npx electron-builder --win --publish always -c.npmRebuild=false
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
