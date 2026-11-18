@@ -1,4 +1,4 @@
-import { ArrowUp, Clock, Loader2, Mic, Paperclip, Square, X } from 'lucide-react';
+import { ArrowUp, Clock, Loader2, Mic, Paperclip, Quote, Square, X } from 'lucide-react';
 import { ClipboardEvent, DragEvent, FormEvent, KeyboardEvent, useEffect, useLayoutEffect, useRef, useState } from 'react';
 import type { Attachment } from '../../../../shared/protocol';
 import { native, NativeFile } from '../../native';
@@ -107,8 +107,9 @@ const Composer = () => {
   const speechModel = useApp((s) => s.speechModel);
   const [dictation, setDictation] = useState<'idle' | 'recording' | 'working'>('idle');
   const [dictationStatus, setDictationStatus] = useState('');
+  const [quotes, setQuotes] = useState<string[]>([]);
   const recording = useRef<Recording | null>(null);
-  const drafts = useRef(new Map<number, { text: string; attachments: PendingAttachment[] }>());
+  const drafts = useRef(new Map<number, { text: string; attachments: PendingAttachment[]; quotes: string[] }>());
   const shownTab = useRef(activeId);
   const [suggestIndex, setSuggestIndex] = useState(0);
   const [suggestDismissed, setSuggestDismissed] = useState(false);
@@ -120,30 +121,24 @@ const Composer = () => {
     }
   };
 
-  // Geselecteerde chattekst als citaat achter het concept zetten en daar verder typen.
+  // Geselecteerde chattekst komt als citaatkaart boven het invoerveld; bij het versturen gaat hij als blockquote mee.
   useEffect(() => {
     if (quote === null) {
       return;
     }
-    const block = quote.split('\n').map((line) => `> ${line}`).join('\n');
-    setText((current) => `${current.trimEnd() ? `${current.trimEnd()}\n\n` : ''}${block}\n\n`);
+    setQuotes((current) => [...current, quote]);
     clearQuote();
-    requestAnimationFrame(() => {
-      const el = textareaRef.current;
-      if (el && !el.disabled) {
-        el.focus();
-        el.setSelectionRange(el.value.length, el.value.length);
-      }
-    });
+    requestAnimationFrame(focus);
   }, [quote]);
 
   // Concept per tabblad bewaren en terugzetten bij het wisselen.
   useEffect(() => {
     if (shownTab.current !== activeId) {
-      drafts.current.set(shownTab.current, { text, attachments });
+      drafts.current.set(shownTab.current, { text, attachments, quotes });
       const draft = drafts.current.get(activeId);
       setText(draft?.text ?? '');
       setAttachments(draft?.attachments ?? []);
+      setQuotes(draft?.quotes ?? []);
       shownTab.current = activeId;
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -314,7 +309,8 @@ const Composer = () => {
       focus();
       return;
     }
-    const message = text.trim() || 'Bekijk de bijlage(n).';
+    const quoted = quotes.map((q) => q.split('\n').map((line) => `> ${line}`).join('\n')).join('\n\n');
+    const message = `${quoted ? `${quoted}\n\n` : ''}${text.trim() || 'Bekijk de bijlage(n).'}`;
     const payload = attachments.map(({ size: _s, preview: _p, ...a }) => a);
     if (running || queue.length > 0) {
       enqueue(message, payload);
@@ -325,6 +321,7 @@ const Composer = () => {
     }
     setText('');
     setAttachments([]);
+    setQuotes([]);
     focus();
   };
 
@@ -433,6 +430,19 @@ const Composer = () => {
         </div>
       )}
       <div className={[styles.box, dragging && styles.dragging, text.startsWith('!') && styles.shellMode].filter(Boolean).join(' ')}>
+        {quotes.length > 0 && (
+          <div className={styles.quotes}>
+            {quotes.map((q, index) => (
+              <div key={index} className={styles.quoteCard}>
+                <Quote size={14} className={styles.quoteIcon} />
+                <span className={styles.quoteText}>{q}</span>
+                <button type="button" className={styles.miniKnop} onClick={() => setQuotes((all) => all.filter((_, i) => i !== index))} aria-label="Citaat verwijderen">
+                  <X size={14} />
+                </button>
+              </div>
+            ))}
+          </div>
+        )}
         {attachments.length > 0 && (
           <div className={styles.chips}>
             {attachments.map((a, index) => (

@@ -1,5 +1,6 @@
 import { X } from 'lucide-react';
 import { useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import { Icoonknop } from '../../vertex';
 import styles from './ui.module.scss';
 
@@ -10,7 +11,8 @@ const ImagePreview = ({ src, name, onClose }: { src: string; name: string; onClo
     return () => window.removeEventListener('keydown', handleKey);
   }, [onClose]);
 
-  return (
+  // Via een portal op <body>: binnen een bericht in de wachtrij (die doorzichtig is) zou de foto anders ook doorzichtig worden.
+  return createPortal(
     <div className={styles.lightbox} onClick={onClose} role="dialog" aria-label={name}>
       <div className={styles.lightboxBar}>
         <span>{name}</span>
@@ -19,7 +21,8 @@ const ImagePreview = ({ src, name, onClose }: { src: string; name: string; onClo
         </Icoonknop>
       </div>
       <img src={src} alt={name} onClick={(event) => event.stopPropagation()} />
-    </div>
+    </div>,
+    document.body,
   );
 };
 
