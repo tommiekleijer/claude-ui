@@ -53,7 +53,10 @@
     "node-pty": "^1.1.0"
   },
   "description": "Desktop-app met een grafische interface voor Claude Code, op basis van je eigen Claude-abonnement.",
-  "author": "Tommie Kleijer",
+  "author": {
+    "name": "Tommie Kleijer",
+    "email": "114905155+tommiekleijer@users.noreply.github.com"
+  },
   "license": "MIT",
   "homepage": "https://github.com/tommiekleijer/claude-ui",
   "repository": {
@@ -86,7 +89,8 @@
     ],
     "linux": {
       "target": [
-        "AppImage"
+        "AppImage",
+        "deb"
       ],
       "category": "Development",
       "icon": "build/icon.png",
@@ -123,6 +127,19 @@
       "oneClick": false,
       "perMachine": false,
       "allowToChangeInstallationDirectory": true
+    },
+    "deb": {
+      "depends": [
+        "libgtk-3-0",
+        "libnotify4",
+        "libnss3",
+        "libxss1",
+        "libxtst6",
+        "xdg-utils",
+        "libatspi2.0-0",
+        "libuuid1",
+        "libsecret-1-0"
+      ]
     }
   }
 }

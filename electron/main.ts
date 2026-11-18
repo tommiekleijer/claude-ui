@@ -234,7 +234,8 @@ app.setPath('userData', path.join(app.getPath('appData'), 'claude-ui'));
 if (process.platform === 'linux') {
   app.commandLine.appendSwitch('enable-transparent-visuals');
   // Een AppImage kan de SUID-sandbox niet gebruiken (en Ubuntu 24.04 blokkeert user namespaces); de app laadt alleen eigen pagina's.
-  if (app.isPackaged) {
+  // Het .deb-pakket zet chrome-sandbox wel goed neer en houdt de sandbox aan.
+  if (process.env.APPIMAGE) {
     app.commandLine.appendSwitch('no-sandbox');
   }
 }

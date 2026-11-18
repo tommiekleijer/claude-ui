@@ -12,7 +12,8 @@ Download de nieuwste versie onder [**Releases**](https://github.com/tommiekleije
 |---|---|---|
 | **Windows 10/11** | `claude-ui-…-windows-setup.exe` | Dubbelklik. Windows toont "onbekende uitgever": kies **Meer info → Toch uitvoeren**. Vereist WSL (zie hieronder). |
 | **macOS** | `claude-ui-…-mac-arm64.dmg` (Apple Silicon) of `…-mac-x64.dmg` (Intel) | Sleep de app naar Programma's. Bij het eerste openen: rechtsklik → **Open** (de app is niet door Apple ondertekend). |
-| **Linux** | `claude-ui-…-linux-x86_64.AppImage` | `chmod +x claude-ui-*.AppImage && ./claude-ui-*.AppImage` |
+| **Ubuntu / Debian** | `claude-ui-…-linux-amd64.deb` | `sudo apt install ./claude-ui-*.deb`; daarna staat **Claude UI** in je menu. |
+| **Overige Linux** | `claude-ui-…-linux-x86_64.AppImage` | `chmod +x claude-ui-*.AppImage && ./claude-ui-*.AppImage` |
 
 **Windows en WSL:** de app draait Claude Code in WSL (Windows Subsystem for Linux), zodat je repos, tools en Claude Code-instellingen dezelfde zijn als in je WSL-terminal. Heb je WSL nog niet, installeer het dan met `wsl --install` in PowerShell.
 
