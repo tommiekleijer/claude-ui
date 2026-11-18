@@ -232,8 +232,7 @@
   align-items: flex-start;
   gap: var(--ruimte-2);
   padding: var(--ruimte-2) var(--ruimte-3);
-  border-left: 3px solid var(--accent-vlak);
-  border-radius: var(--vorm-sm, 8px);
+  border-radius: var(--vorm-md);
   background: var(--accent-zacht);
   color: var(--tekst-gedempt);
 }

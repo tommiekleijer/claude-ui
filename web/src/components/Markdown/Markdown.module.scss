@@ -57,8 +57,9 @@
   }
 
   blockquote {
-    padding-left: var(--ruimte-3);
-    border-left: 3px solid var(--accent-zacht);
+    padding: var(--ruimte-2) var(--ruimte-3);
+    border-radius: var(--vorm-md);
+    background: var(--achtergrond-vlak);
     color: var(--tekst-gedempt);
   }
 
