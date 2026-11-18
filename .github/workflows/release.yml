@@ -82,6 +82,6 @@ jobs:
           tar xzf linux-backend.tgz -C build
       - run: npm ci
       - run: npm run build
-      - run: npx electron-builder --win --publish always -c.npmRebuild=false
+      - run: npx electron-builder --win --publish always --config.npmRebuild=false
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
