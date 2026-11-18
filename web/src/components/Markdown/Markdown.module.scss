@@ -162,3 +162,11 @@
     cursor: zoom-in;
   }
 }
+
+.jumpable {
+  cursor: pointer;
+
+  &:hover {
+    background: var(--accent-zacht);
+  }
+}

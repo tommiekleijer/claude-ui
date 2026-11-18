@@ -1,6 +1,7 @@
 import { Cpu, Gauge } from 'lucide-react';
+import { useEffect } from 'react';
 import type { Effort } from '../../../../shared/protocol';
-import { send, useStore } from '../../store';
+import { isTerminalKey, send, useStore } from '../../store';
 import Select from '../ui/Select';
 
 const EFFORT_LABELS: Record<Effort, string> = {
@@ -28,6 +29,29 @@ const ModelControls = () => {
   const modelLabel = selected?.label ?? (activeModel ? prettyModel(activeModel) : 'Standaard model');
   const efforts = (selected ?? models.find((m) => m.value === 'default'))?.efforts ?? [];
 
+  // Ctrl+↑/↓ (op de Mac ook Cmd): effort hoger of lager, in de volgorde van de lijst.
+  useEffect(() => {
+    if (efforts.length === 0) {
+      return undefined;
+    }
+    const handleKey = (event: KeyboardEvent) => {
+      if ((!event.ctrlKey && !event.metaKey) || event.shiftKey || event.altKey || isTerminalKey(event)) {
+        return;
+      }
+      if (event.key !== 'ArrowUp' && event.key !== 'ArrowDown') {
+        return;
+      }
+      event.preventDefault();
+      const current = effort ? efforts.indexOf(effort) : efforts.indexOf('medium');
+      const next = Math.min(Math.max((current === -1 ? 0 : current) + (event.key === 'ArrowUp' ? 1 : -1), 0), efforts.length - 1);
+      if (efforts[next] !== effort) {
+        send({ type: 'set_effort', effort: efforts[next] });
+      }
+    };
+    window.addEventListener('keydown', handleKey);
+    return () => window.removeEventListener('keydown', handleKey);
+  }, [efforts, effort]);
+
   return (
     <>
       <Select
@@ -44,7 +68,7 @@ const ModelControls = () => {
       />
       {efforts.length > 0 && (
         <Select
-          title="Effort"
+          title="Effort (Ctrl+↑/↓)"
           label={
             <>
               <Gauge size={13} />

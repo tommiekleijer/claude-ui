@@ -19,6 +19,7 @@ import {
   useStore,
 } from '../../store';
 import { Chip, Icoonknop, Knop } from '../../vertex';
+import { jumpToQuote } from '../../quoteJump';
 import { loadModel, Recording, startRecording, transcribe } from '../../speech/dictation';
 import ImagePreview from '../ui/ImagePreview';
 import styles from './Composer.module.scss';
@@ -436,7 +437,9 @@ const Composer = () => {
             {quotes.map((q, index) => (
               <div key={index} className={styles.quoteCard}>
                 <Quote size={14} className={styles.quoteIcon} />
-                <span className={styles.quoteText}>{q}</span>
+                <span className={styles.quoteText} title="Ga naar het oorspronkelijke bericht" onClick={() => jumpToQuote(q)}>
+                  {q}
+                </span>
                 <button type="button" className={styles.miniKnop} onClick={() => setQuotes((all) => all.filter((_, i) => i !== index))} aria-label="Citaat verwijderen">
                   <X size={14} />
                 </button>

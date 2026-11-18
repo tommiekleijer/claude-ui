@@ -31,7 +31,7 @@ export const renderItem = (item: ChatItem) => {
         <div key={item.id} className={styles.user}>
           {item.text && (
             <div className={styles.userText} data-quotable>
-              <Markdown text={item.text} />
+              <Markdown text={item.text} jumpToQuotes />
             </div>
           )}
           {item.images && item.images.length > 0 && <ChatImages images={item.images} />}
