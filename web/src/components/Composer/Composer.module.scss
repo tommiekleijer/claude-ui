@@ -191,3 +191,30 @@
     margin-right: 0;
   }
 }
+
+.recording {
+  animation: pulse 1.2s ease-in-out infinite;
+  background: var(--status-negatief);
+}
+
+.dictationStatus {
+  @include stijl.klein;
+  color: var(--tekst-gedempt);
+  white-space: nowrap;
+}
+
+.spin {
+  animation: draai 0.8s linear infinite;
+}
+
+@keyframes pulse {
+  50% {
+    opacity: 0.55;
+  }
+}
+
+@keyframes draai {
+  to {
+    transform: rotate(360deg);
+  }
+}

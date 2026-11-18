@@ -98,7 +98,7 @@ export const detectDuplicateConnectors = async () => {
 };
 
 /** Weergave-instellingen (dekking, zijbalk); in de backend omdat de poort, en dus de opslag van het venster, per start wisselt. */
-export const savedUi = (): UiSettings => ({ opacity: 100, sidebarOpen: true, dockWidth: 460, thema: 'systeem', meldingen: true, accent: null, ...readConfig().ui });
+export const savedUi = (): UiSettings => ({ opacity: 100, sidebarOpen: true, dockWidth: 460, thema: 'systeem', meldingen: true, accent: null, speechLanguage: 'nl', speechModel: 'base', ...readConfig().ui });
 export const saveUi = (ui: UiSettings) => writeConfig({ ui });
 
 export const savedTabs = (): SavedTabs => readConfig().tabs ?? { tabs: [], active: 0 };

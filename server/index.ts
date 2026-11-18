@@ -249,7 +249,7 @@ const handleConnection = async (ws: WebSocket) => {
         send({ type: 'settings', ...settings });
         return;
       case 'save_ui':
-        await saveUi({ opacity: event.opacity, sidebarOpen: event.sidebarOpen, dockWidth: event.dockWidth, thema: event.thema, meldingen: event.meldingen, accent: event.accent });
+        await saveUi({ opacity: event.opacity, sidebarOpen: event.sidebarOpen, dockWidth: event.dockWidth, thema: event.thema, meldingen: event.meldingen, accent: event.accent, speechLanguage: event.speechLanguage, speechModel: event.speechModel });
         return;
       case 'question_response':
         session?.answerQuestion(event.id, event.answers, event.chat);

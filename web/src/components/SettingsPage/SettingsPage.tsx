@@ -2,7 +2,8 @@ import { Droplet } from 'lucide-react';
 import type { CSSProperties } from 'react';
 import { useEffect, useState } from 'react';
 import { native } from '../../native';
-import { closeSettings, setAccent, setMeldingen, setOpacity, setThema, useApp } from '../../store';
+import { MODELS, SpeechLanguage, SpeechModel } from '../../speech/dictation';
+import { closeSettings, setAccent, setMeldingen, setOpacity, setSpeech, setThema, useApp } from '../../store';
 import type { Thema } from '../../../../shared/protocol';
 import { Knop, Schakelaar, Segmentbalk } from '../../vertex';
 import Dialog from '../ui/Dialog';
@@ -84,6 +85,8 @@ const SettingsPage = () => {
   const opacity = useApp((s) => s.opacity);
   const meldingen = useApp((s) => s.meldingen);
   const accent = useApp((s) => s.accent);
+  const speechLanguage = useApp((s) => s.speechLanguage);
+  const speechModel = useApp((s) => s.speechModel);
   const huidig = (accent ?? STANDAARD_ACCENT).toLowerCase();
   const eigen = !KLEUREN.some((kleur) => kleur.hex === huidig);
 
@@ -147,6 +150,29 @@ const SettingsPage = () => {
             onChange={(event) => setOpacity(Number(event.target.value))}
           />
           <span className={styles.value}>{opacity}%</span>
+        </Row>
+      </section>
+      <section className={styles.section}>
+        <h3 className={styles.heading}>Dicteren</h3>
+        <Row label="Taal" hint="De taal waarin je praat. Automatisch herkent het zelf de taal, maar vergist zich sneller bij korte zinnen.">
+          <Segmentbalk
+            label="Taal van het dicteren"
+            opties={[
+              { waarde: 'nl', label: 'Nederlands' },
+              { waarde: 'en', label: 'English' },
+              { waarde: 'auto', label: 'Automatisch' },
+            ]}
+            waarde={speechLanguage}
+            onKies={(waarde) => setSpeech({ speechLanguage: waarde as SpeechLanguage })}
+          />
+        </Row>
+        <Row label="Spraakmodel" hint="Wordt lokaal op je computer uitgevoerd; niets gaat naar internet behalve de eerste download van het model.">
+          <Segmentbalk
+            label="Spraakmodel"
+            opties={(Object.keys(MODELS) as SpeechModel[]).map((sleutel) => ({ waarde: sleutel, label: `${MODELS[sleutel].label} ${MODELS[sleutel].size}` }))}
+            waarde={speechModel}
+            onKies={(waarde) => setSpeech({ speechModel: waarde as SpeechModel })}
+          />
         </Row>
       </section>
       {native && (

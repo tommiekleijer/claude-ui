@@ -131,20 +131,3 @@
 .spacer {
   flex: 1 0 var(--ruimte-2);
 }
-
-.settings {
-  position: relative;
-  display: inline-flex;
-}
-
-.updateDot {
-  position: absolute;
-  top: 3px;
-  right: 3px;
-  width: 9px;
-  height: 9px;
-  border: 2px solid var(--app-pagina);
-  border-radius: 50%;
-  background: var(--status-positief);
-  pointer-events: none;
-}

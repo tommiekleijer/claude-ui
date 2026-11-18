@@ -18,6 +18,7 @@ import type {
   Thema,
 } from '../../shared/protocol';
 import { native, UpdateState } from './native';
+import type { SpeechLanguage, SpeechModel } from './speech/dictation';
 
 export type PermissionRequest = Extract<ServerEvent, { type: 'permission_request' }>;
 export type QuestionRequest = Extract<ServerEvent, { type: 'question' }>;
@@ -51,6 +52,8 @@ type AppState = {
   /** Eigen accentkleur (#rrggbb); null = het standaard paars van Vertex. */
   accent: string | null;
   settingsOpen: boolean;
+  speechLanguage: SpeechLanguage;
+  speechModel: SpeechModel;
   /** Status van het zoeken naar een nieuwe versie (alleen in de app). */
   update: UpdateState | null;
   /** Geselecteerde chattekst die als citaat in het invoerveld moet; de Composer neemt hem over en zet dit weer op null. */
@@ -162,8 +165,8 @@ let saveUiTimer: ReturnType<typeof setTimeout> | undefined;
 const saveUi = () => {
   clearTimeout(saveUiTimer);
   saveUiTimer = setTimeout(() => {
-    const { opacity, sidebarOpen, dockWidth, thema, meldingen, accent } = useApp.getState();
-    send({ type: 'save_ui', opacity, sidebarOpen, dockWidth, thema, meldingen, accent });
+    const { opacity, sidebarOpen, dockWidth, thema, meldingen, accent, speechLanguage, speechModel } = useApp.getState();
+    send({ type: 'save_ui', opacity, sidebarOpen, dockWidth, thema, meldingen, accent, speechLanguage, speechModel });
   }, 300);
 };
 
@@ -228,6 +231,11 @@ export const setAccent = (accent: string | null) => {
 export const quoteInComposer = (text: string) => useApp.setState({ quote: text });
 export const clearQuote = () => useApp.setState({ quote: null });
 
+export const setSpeech = (settings: { speechLanguage?: SpeechLanguage; speechModel?: SpeechModel }) => {
+  useApp.setState(settings);
+  saveUi();
+};
+
 export const openSettings = () => useApp.setState({ settingsOpen: true });
 export const closeSettings = () => useApp.setState({ settingsOpen: false });
 
@@ -263,6 +271,8 @@ export const useApp = create<AppState>()(() => ({
   meldingen: true,
   accent: null,
   settingsOpen: false,
+  speechLanguage: 'nl',
+  speechModel: 'base',
   update: null,
   quote: null,
   dockWidth: 460,
@@ -589,7 +599,7 @@ const applyEvent = (tab: Tab, event: ServerEvent) => {
         terminalAvailable: event.terminal,
       });
       if (!restored) {
-        useApp.setState({ opacity: event.ui.opacity, sidebarOpen: event.ui.sidebarOpen, thema: event.ui.thema, meldingen: event.ui.meldingen, accent: event.ui.accent ?? null });
+        useApp.setState({ opacity: event.ui.opacity, sidebarOpen: event.ui.sidebarOpen, thema: event.ui.thema, meldingen: event.ui.meldingen, accent: event.ui.accent ?? null, speechLanguage: event.ui.speechLanguage ?? 'nl', speechModel: event.ui.speechModel ?? 'base' });
         applyOpacity(event.ui.opacity);
         applyThema(event.ui.thema);
         applyAccent(event.ui.accent ?? null);

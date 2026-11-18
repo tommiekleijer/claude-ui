@@ -1,4 +1,4 @@
-import { ArrowUp, Clock, Paperclip, Square, X } from 'lucide-react';
+import { ArrowUp, Clock, Loader2, Mic, Paperclip, Square, X } from 'lucide-react';
 import { ClipboardEvent, DragEvent, FormEvent, KeyboardEvent, useEffect, useLayoutEffect, useRef, useState } from 'react';
 import type { Attachment } from '../../../../shared/protocol';
 import { native, NativeFile } from '../../native';
@@ -19,6 +19,7 @@ import {
   useStore,
 } from '../../store';
 import { Chip, Icoonknop, Knop } from '../../vertex';
+import { loadModel, Recording, startRecording, transcribe } from '../../speech/dictation';
 import ImagePreview from '../ui/ImagePreview';
 import styles from './Composer.module.scss';
 import ModeControl from './ModeControl';
@@ -102,6 +103,11 @@ const Composer = () => {
   const commands = useStore((s) => s.manage?.commands);
   const hasManage = useStore((s) => s.manage !== null);
   const quote = useApp((s) => s.quote);
+  const speechLanguage = useApp((s) => s.speechLanguage);
+  const speechModel = useApp((s) => s.speechModel);
+  const [dictation, setDictation] = useState<'idle' | 'recording' | 'working'>('idle');
+  const [dictationStatus, setDictationStatus] = useState('');
+  const recording = useRef<Recording | null>(null);
   const drafts = useRef(new Map<number, { text: string; attachments: PendingAttachment[] }>());
   const shownTab = useRef(activeId);
   const [suggestIndex, setSuggestIndex] = useState(0);
@@ -225,6 +231,47 @@ const Composer = () => {
     ]);
     if (paths.length > 0) {
       insertText(paths.join(' '));
+    }
+  };
+
+  // Dicteren: opnemen, met Whisper (lokaal) omzetten en de tekst op de cursor in het veld zetten.
+  const toggleDictation = async () => {
+    if (dictation === 'working') {
+      return;
+    }
+    if (dictation === 'recording') {
+      const current = recording.current;
+      recording.current = null;
+      setDictation('working');
+      setDictationStatus('Omzetten…');
+      try {
+        const audio = await current!.stop();
+        const spoken = await transcribe(audio, speechModel, speechLanguage, (percent) => setDictationStatus(`Spraakmodel downloaden… ${percent}%`));
+        if (spoken) {
+          const el = textareaRef.current;
+          const before = el ? text.slice(0, el.selectionStart) : text;
+          insertText(`${before && !/\s$/.test(before) ? ' ' : ''}${spoken}`);
+        } else {
+          notify('Ik heb niets verstaan.');
+        }
+      } catch (error) {
+        notify(`Dicteren mislukt: ${error instanceof Error ? error.message : String(error)}`);
+      }
+      setDictation('idle');
+      setDictationStatus('');
+      focus();
+      return;
+    }
+    try {
+      recording.current = await startRecording();
+      setDictation('recording');
+      setDictationStatus('Aan het opnemen… klik om te stoppen');
+      // Het model alvast laden (de eerste keer downloaden), zodat het omzetten straks direct kan.
+      void loadModel(speechModel, (percent) => setDictationStatus(`Spraakmodel downloaden… ${percent}%`))
+        .then(() => setDictationStatus((s) => (s.startsWith('Spraakmodel') ? 'Aan het opnemen… klik om te stoppen' : s)))
+        .catch(() => undefined);
+    } catch (error) {
+      notify(`Microfoon niet beschikbaar: ${error instanceof Error ? error.message : String(error)}`);
     }
   };
 
@@ -469,9 +516,21 @@ const Composer = () => {
           >
             <Paperclip size={16} />
           </Icoonknop>
+          <Icoonknop
+            maat={32}
+            stijl={dictation === 'recording' ? 'primair' : 'getint'}
+            className={dictation === 'recording' ? styles.recording : undefined}
+            aria-label={dictation === 'recording' ? 'Stoppen met dicteren' : 'Dicteren'}
+            title={dictation === 'recording' ? 'Stoppen en omzetten naar tekst' : 'Dicteren (spraak naar tekst)'}
+            disabled={dictation === 'working'}
+            onClick={() => void toggleDictation()}
+          >
+            {dictation === 'working' ? <Loader2 size={16} className={styles.spin} /> : dictation === 'recording' ? <Square size={14} /> : <Mic size={16} />}
+          </Icoonknop>
           <ModeControl />
           <ModelControls />
           <span className={styles.spacer} />
+          {dictationStatus && <span className={styles.dictationStatus}>{dictationStatus}</span>}
           {running && (
             <Knop variant="destructief" maat="s" icoon={<Square size={14} />} onClick={() => send({ type: 'interrupt' })}>
               Stoppen

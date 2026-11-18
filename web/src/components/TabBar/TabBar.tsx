@@ -1,7 +1,7 @@
-import { Droplet, PanelLeftClose, PanelLeftOpen, Plus, SquareTerminal, X } from 'lucide-react';
+import { Download, Droplet, PanelLeftClose, PanelLeftOpen, Plus, SquareTerminal, X } from 'lucide-react';
 import { DragEvent, MouseEvent, useEffect, useState } from 'react';
 import { native } from '../../native';
-import { Chip, Icoonknop } from '../../vertex';
+import { Chip, Icoonknop, Knop } from '../../vertex';
 import {
   activateTab,
   closeTab,
@@ -109,18 +109,46 @@ const TabButton = ({ id, active }: { id: number; active: boolean }) => {
   );
 };
 
-const SettingsButton = () => {
+const UpdateButton = () => {
   const update = useApp((s) => s.update);
-  const hasUpdate = update?.status === 'available' || update?.status === 'ready';
-  return (
-    <span className={styles.settings}>
-      <Icoonknop maat={32} onClick={openSettings} aria-label="Instellingen" title={hasUpdate ? 'Instellingen (update beschikbaar)' : 'Instellingen'}>
-        <Droplet size={16} />
-      </Icoonknop>
-      {hasUpdate && <span className={styles.updateDot} />}
-    </span>
-  );
+  if (!native || !update) {
+    return null;
+  }
+  if (update.status === 'available') {
+    return (
+      <Knop
+        variant="primair"
+        maat="s"
+        icoon={<Download size={14} />}
+        title={native.platform === 'darwin' ? 'Opent de downloadpagina' : 'Downloaden en installeren'}
+        onClick={() => void native?.updates.install()}
+      >
+        Update {update.version}
+      </Knop>
+    );
+  }
+  if (update.status === 'downloading') {
+    return (
+      <Knop variant="secundair" maat="s" icoon={<Download size={14} />} disabled>
+        Downloaden {update.percent}%
+      </Knop>
+    );
+  }
+  if (update.status === 'ready') {
+    return (
+      <Knop variant="primair" maat="s" onClick={() => void native?.updates.restart()}>
+        Herstarten om te updaten
+      </Knop>
+    );
+  }
+  return null;
 };
+
+const SettingsButton = () => (
+  <Icoonknop maat={32} onClick={openSettings} aria-label="Instellingen" title="Instellingen">
+    <Droplet size={16} />
+  </Icoonknop>
+);
 
 const TabBar = () => {
   const tabIds = useApp((s) => s.tabIds);
@@ -203,6 +231,7 @@ const TabBar = () => {
       >
         <SquareTerminal size={16} />
       </Icoonknop>
+      <UpdateButton />
       <SettingsButton />
     </div>
   );
