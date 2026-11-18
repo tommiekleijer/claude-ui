@@ -10,8 +10,8 @@ env.allowLocalModels = false;
 env.useBrowserCache = true;
 
 export type WorkerRequest =
-  | { type: 'load'; model: string; forceWasm?: boolean }
-  | { type: 'transcribe'; model: string; audio: Float32Array; language: string | null; forceWasm?: boolean };
+  | { type: 'load'; model: string; dtype: 'q8' | 'q4'; forceWasm?: boolean }
+  | { type: 'transcribe'; model: string; dtype: 'q8' | 'q4'; audio: Float32Array; language: string | null; forceWasm?: boolean };
 export type WorkerResponse =
   | { type: 'progress'; percent: number }
   | { type: 'ready'; device: 'webgpu' | 'wasm' }
@@ -31,7 +31,7 @@ const hasGpu = async () => {
   }
 };
 
-const load = async (model: string, forceWasm = false) => {
+const load = async (model: string, dtype: 'q8' | 'q4', forceWasm = false) => {
   if (loaded?.model === model) {
     return loaded;
   }
@@ -47,7 +47,8 @@ const load = async (model: string, forceWasm = false) => {
     env.backends.onnx.wasm!.wasmPaths = device === 'webgpu' ? { mjs: jsepMjs, wasm: jsepWasm } : { mjs: plainMjs, wasm: plainWasm };
     return pipeline('automatic-speech-recognition', model, {
       device,
-      dtype: device === 'webgpu' ? { encoder_model: 'fp32', decoder_model_merged: 'q4' } : 'q8',
+      // Zelfde bestanden op WebGPU en WASM, zodat de download klopt met wat Instellingen noemt; ops die WebGPU niet kan, draaien op de CPU.
+      dtype,
       progress_callback,
     }) as unknown as Promise<Transcriber>;
   };
@@ -72,7 +73,7 @@ const load = async (model: string, forceWasm = false) => {
 addEventListener('message', async (event: MessageEvent<WorkerRequest>) => {
   const request = event.data;
   try {
-    const result = await load(request.model, request.forceWasm);
+    const result = await load(request.model, request.dtype, request.forceWasm);
     if (!result) {
       return;
     }

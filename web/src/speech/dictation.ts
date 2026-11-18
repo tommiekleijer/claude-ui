@@ -1,9 +1,11 @@
 import type { WorkerRequest, WorkerResponse } from './whisper.worker';
 
-/** Spraakmodellen (Whisper, lokaal); ca. grootte van de eerste download. */
+/** Spraakmodellen (Whisper, lokaal) met hun kwantisatie; size = de eerste download. */
 export const MODELS = {
-  base: { id: 'onnx-community/whisper-base', label: 'Snel', size: '~80 MB' },
-  small: { id: 'onnx-community/whisper-small', label: 'Nauwkeurig', size: '~250 MB' },
+  base: { id: 'onnx-community/whisper-base', dtype: 'q8', label: 'Snel', size: '~80 MB' },
+  small: { id: 'onnx-community/whisper-small', dtype: 'q8', label: 'Nauwkeurig', size: '~250 MB' },
+  // q8 zou ruim 1 GB zijn; q4 houdt hem rond de 760 MB met nauwelijks kwaliteitsverlies bij dit grote model.
+  turbo: { id: 'onnx-community/whisper-large-v3-turbo', dtype: 'q4', label: 'Beste', size: '~760 MB' },
 } as const;
 export type SpeechModel = keyof typeof MODELS;
 export type SpeechLanguage = 'nl' | 'en' | 'auto';
@@ -49,7 +51,7 @@ const call = async (request: WorkerRequest, progress?: (percent: number) => void
 
 /** Laadt het model alvast (downloadt het de eerste keer), zodat het omzetten straks direct kan. */
 export const loadModel = async (model: SpeechModel, progress: (percent: number) => void) => {
-  const response = await call({ type: 'load', model: MODELS[model].id }, progress);
+  const response = await call({ type: 'load', model: MODELS[model].id, dtype: MODELS[model].dtype }, progress);
   if (response.type === 'error') {
     throw new Error(response.message);
   }
@@ -89,7 +91,7 @@ export const startRecording = async (): Promise<Recording> => {
 };
 
 export const transcribe = async (audio: Float32Array, model: SpeechModel, language: SpeechLanguage, progress: (percent: number) => void) => {
-  const response = await call({ type: 'transcribe', model: MODELS[model].id, audio, language: LANGUAGE_NAME[language] }, progress);
+  const response = await call({ type: 'transcribe', model: MODELS[model].id, dtype: MODELS[model].dtype, audio, language: LANGUAGE_NAME[language] }, progress);
   if (response.type === 'error') {
     throw new Error(response.message);
   }
