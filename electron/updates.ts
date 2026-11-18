@@ -60,8 +60,15 @@ export const setupUpdates = () => {
   });
   ipcMain.handle('update-restart', () => autoUpdater.quitAndInstall());
 
-  // Stil controleren kort na het opstarten; de gebruiker beslist zelf over installeren.
+  // Stil controleren kort na het opstarten en daarna elk kwartier; de gebruiker beslist zelf over installeren.
+  // Staat er al een update klaar of loopt de download, dan niet opnieuw zoeken (dat zou de knop terugzetten).
   if (app.isPackaged) {
-    setTimeout(() => void check(), 10_000);
+    const quietCheck = () => {
+      if (state.status !== 'available' && state.status !== 'downloading' && state.status !== 'ready') {
+        void check();
+      }
+    };
+    setTimeout(quietCheck, 10_000);
+    setInterval(quietCheck, 15 * 60_000);
   }
 };
