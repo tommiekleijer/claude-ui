@@ -1,4 +1,4 @@
-import { Folder, FolderCog, History, Search } from 'lucide-react';
+import { Folder, FolderCog, FolderOpen, History, Search } from 'lucide-react';
 import { KeyboardEvent, useEffect, useState } from 'react';
 import { native } from '../../native';
 import { openProject, send, setPickerOpen, useStore } from '../../store';
@@ -21,17 +21,38 @@ const ProjectPicker = () => {
     }
   }, [connected]);
 
+  const root = dirs?.path ?? null;
   const term = search.trim().toLowerCase();
+  const typedPath = /^(\/|~)/.test(search.trim()) ? search.trim() : null;
   const matches = (name: string) => name.toLowerCase().includes(term);
-  const recentNames = recent.map((dir) => dir.split('/').pop() ?? dir).filter(matches);
-  const repos = (dirs?.dirs ?? []).filter((name) => matches(name) && !recentNames.includes(name));
-  const entries = [...recentNames.map((name) => ({ name, recent: true })), ...repos.map((name) => ({ name, recent: false }))];
-  const open = (name: string) => dirs && openProject(`${dirs.path}/${name}`);
+  const label = (dir: string) => (root && dir.startsWith(`${root}/`) ? dir.slice(root.length + 1) : dir.replace(/^\/home\/[^/]+/, '~'));
+  const recentEntries = recent.map((dir) => ({ dir, name: label(dir), recent: true })).filter((e) => !typedPath && matches(e.name));
+  const recentDirs = new Set(recent);
+  const repoEntries = (dirs?.dirs ?? [])
+    .map((name) => ({ dir: `${root}/${name}`, name, recent: false }))
+    .filter((e) => !typedPath && matches(e.name) && !recentDirs.has(e.dir));
+  const entries = [
+    ...(typedPath ? [{ dir: typedPath, name: typedPath, recent: false, typed: true }] : []),
+    ...recentEntries,
+    ...repoEntries,
+  ];
+  const open = (dir: string) => openProject(dir);
   const close = cwd ? () => setPickerOpen(false) : undefined;
+
+  const openOther = async () => {
+    if (native) {
+      const picked = await native.pickFolder('Map openen');
+      if (picked) {
+        openProject(picked);
+      }
+      return;
+    }
+    setSearch('/');
+  };
 
   const changeRoot = async () => {
     if (native) {
-      const picked = await native.pickFolder();
+      const picked = await native.pickFolder('Standaardmap kiezen');
       if (picked) {
         send({ type: 'set_root', path: picked });
       }
@@ -48,7 +69,7 @@ const ProjectPicker = () => {
       event.preventDefault();
       setActive((i) => Math.max(i - 1, 0));
     } else if (event.key === 'Enter' && entries[active]) {
-      open(entries[active].name);
+      open(entries[active].dir);
     }
   };
 
@@ -84,7 +105,7 @@ const ProjectPicker = () => {
       <Zoekveld
         icoon={<Search size={16} />}
         autoFocus
-        placeholder="Zoek een project"
+        placeholder="Zoek een project of plak een pad (/…, ~/…)"
         value={search}
         onChange={(event) => {
           setSearch(event.target.value);
@@ -94,20 +115,25 @@ const ProjectPicker = () => {
       />
       <ul className={styles.list}>
         {entries.map((entry, index) => (
-          <li key={`${entry.recent}-${entry.name}`}>
+          <li key={`${entry.recent}-${entry.dir}`}>
             <button
               type="button"
               className={index === active ? `${styles.item} ${styles.active}` : styles.item}
               onMouseEnter={() => setActive(index)}
-              onClick={() => open(entry.name)}
+              onClick={() => open(entry.dir)}
             >
               {entry.recent ? <History size={16} className={styles.recent} /> : <Folder size={16} />}
-              <span>{entry.name}</span>
+              <span>{'typed' in entry ? `Openen: ${entry.name}` : entry.name}</span>
             </button>
           </li>
         ))}
         {entries.length === 0 && <li className={styles.empty}>Geen map gevonden</li>}
       </ul>
+      <div className={styles.other}>
+        <Knop variant="tertiair" maat="s" onClick={() => void openOther()}>
+          <FolderOpen size={16} /> Andere map openen…
+        </Knop>
+      </div>
     </Dialog>
   );
 };

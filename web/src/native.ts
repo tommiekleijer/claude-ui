@@ -21,7 +21,7 @@ type ClaudeUiBridge = {
   platform: string;
   readClipboardFiles: () => Promise<NativeFile[]>;
   readDroppedFiles: (files: File[]) => Promise<NativeFile[]>;
-  pickFolder: () => Promise<string | null>;
+  pickFolder: (title?: string) => Promise<string | null>;
   /** Opent een bestand in de standaard-app; geeft een foutmelding terug of null. */
   openPath: (path: string) => Promise<string | null>;
   /** Toont het bestand in bestandsbeheer (verkenner). */

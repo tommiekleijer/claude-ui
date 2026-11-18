@@ -8,6 +8,7 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { WebSocket, WebSocketServer } from 'ws';
 import type { ClientEvent, ServerEvent, Settings } from '../shared/protocol.js';
+import { changeRule, readConfig, saveMemory } from './config.js';
 import { historyItems, lastContextTokens } from './mapMessages.js';
 import {
   addRecent,
@@ -15,7 +16,6 @@ import {
   availableModels,
   getRoot,
   isDirectory,
-  isWithinRoot,
   listDirs,
   readRecent,
   detectDuplicateConnectors,
@@ -102,11 +102,8 @@ const handleConnection = async (ws: WebSocket) => {
 
   const sendSessions = async () => send({ type: 'sessions', sessions: await allSessions() });
 
-  const openProject = async (dir: string) => {
-    if (!isWithinRoot(dir)) {
-      send({ type: 'error', message: `Alleen mappen binnen ${getRoot()} zijn toegestaan.` });
-      return false;
-    }
+  const openProject = async (input: string) => {
+    const dir = path.resolve(input.trim().replace(/^~(?=$|\/)/, homedir()));
     if (!(await isDirectory(dir))) {
       send({ type: 'error', message: `Map bestaat niet: ${dir}` });
       return false;
@@ -187,6 +184,24 @@ const handleConnection = async (ws: WebSocket) => {
         }
         return;
       }
+      case 'config':
+      case 'save_memory':
+      case 'permission_rule':
+        if (!cwd) {
+          send({ type: 'error', message: 'Kies eerst een project.' });
+          return;
+        }
+        try {
+          if (event.type === 'save_memory') {
+            await saveMemory(cwd, event.path, event.content);
+          } else if (event.type === 'permission_rule') {
+            await changeRule(cwd, event.scope, event.list, event.rule.trim(), event.remove);
+          }
+        } catch (error) {
+          send({ type: 'error', message: (error as Error).message });
+        }
+        send({ type: 'config', ...(await readConfig(cwd)) });
+        return;
       case 'mcp_toggle':
         await ensureSession()?.toggleMcp(event.name, event.enabled);
         send({ type: 'manage', ...(await (session as ClaudeSession).manage()) });
@@ -291,7 +306,7 @@ const handleConnection = async (ws: WebSocket) => {
         terminals.kill(event.id);
         return;
       case 'save_tabs':
-        await saveTabs({ tabs: event.tabs.filter((t) => isWithinRoot(t.cwd)), active: event.active });
+        await saveTabs({ tabs: event.tabs, active: event.active });
         return;
       case 'interrupt':
         await session?.interrupt();

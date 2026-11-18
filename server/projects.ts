@@ -109,9 +109,12 @@ export const isWithinRoot = (dir: string) => {
   return resolved !== root && resolved.startsWith(root + path.sep);
 };
 
+// Recente projecten mogen overal staan; verdwenen mappen vallen er vanzelf uit.
 export const readRecent = async (): Promise<string[]> => {
   try {
-    return (JSON.parse(await readFile(recentFile, 'utf8')) as string[]).filter(isWithinRoot);
+    const dirs = JSON.parse(await readFile(recentFile, 'utf8')) as string[];
+    const exists = await Promise.all(dirs.map(isDirectory));
+    return dirs.filter((_, i) => exists[i]);
   } catch {
     return [];
   }
@@ -126,30 +129,74 @@ export const addRecent = async (dir: string): Promise<string[]> => {
 
 export const isDirectory = async (dir: string) => (await stat(dir).catch(() => null))?.isDirectory() ?? false;
 
+const skipDirs = new Set(['node_modules', 'vendor', 'dist', 'build', 'target', '__pycache__']);
+const maxDepth = 3;
+
+/**
+ * Projecten onder de standaardmap, als pad relatief aan de standaardmap. Een map met `.git` is een project
+ * (daaronder zoeken we niet verder); mappen zonder `.git` zijn groepsmappen waar we dieper in kijken.
+ * Staat er geen enkele repo in, dan vallen we terug op de mappen direct onder de standaardmap.
+ */
 export const listDirs = async () => {
-  const entries = await readdir(root, { withFileTypes: true });
-  return {
-    path: root,
-    dirs: entries
-      .filter((e) => e.isDirectory() && !e.name.startsWith('.'))
-      .map((e) => e.name)
-      .sort((a, b) => a.localeCompare(b)),
+  const found: string[] = [];
+  const walk = async (dir: string, depth: number): Promise<void> => {
+    const entries = await readdir(dir, { withFileTypes: true }).catch(() => []);
+    await Promise.all(
+      entries
+        .filter((e) => e.isDirectory() && !e.name.startsWith('.') && !skipDirs.has(e.name))
+        .map(async (e) => {
+          const full = path.join(dir, e.name);
+          if (existsSync(path.join(full, '.git'))) {
+            found.push(path.relative(root, full));
+          } else if (depth < maxDepth) {
+            await walk(full, depth + 1);
+          }
+        }),
+    );
   };
+  await walk(root, 1);
+  if (found.length === 0) {
+    const entries = await readdir(root, { withFileTypes: true });
+    found.push(...entries.filter((e) => e.isDirectory() && !e.name.startsWith('.')).map((e) => e.name));
+  }
+  return { path: root, dirs: found.sort((a, b) => a.localeCompare(b)) };
 };
 
-// Alle sessies binnen de standaardmap; `repo` is de eerste map daaronder, zodat sessies in submappen bij hun repo staan.
-export const allSessions = async (): Promise<SessionSummary[]> =>
-  (await listSessions({ limit: 500 }))
-    .filter((s) => !s.archived && s.cwd && isWithinRoot(s.cwd))
+/** De dichtstbijzijnde map (zelf of erboven) met `.git`; zonder git de map zelf. */
+const gitRoot = (dir: string) => {
+  for (let d = dir; ; d = path.dirname(d)) {
+    if (existsSync(path.join(d, '.git'))) {
+      return d;
+    }
+    if (d === root || d === path.dirname(d)) {
+      return dir;
+    }
+  }
+};
+
+/** Korte naam van een project: relatief aan de standaardmap, of de mapnaam als het daarbuiten staat. */
+export const repoName = (dir: string) => {
+  const relative = path.relative(root, dir);
+  return relative && !relative.startsWith('..') && !path.isAbsolute(relative) ? relative : path.basename(dir);
+};
+
+// Sessies binnen de standaardmap of in een recent geopende map; `repo` is de naam van het project,
+// zodat sessies in submappen bij hun repo staan.
+export const allSessions = async (): Promise<SessionSummary[]> => {
+  const recent = await readRecent();
+  const known = (dir: string) => isWithinRoot(dir) || recent.some((r) => dir === r || dir.startsWith(r + path.sep));
+  return (await listSessions({ limit: 500 }))
+    .filter((s) => !s.archived && s.cwd && known(s.cwd))
     .sort((a, b) => b.lastModified - a.lastModified)
     .map((s) => ({
       sessionId: s.sessionId,
       title: s.customTitle ?? s.summary,
       lastModified: s.lastModified,
       cwd: s.cwd as string,
-      repo: path.relative(root, s.cwd as string).split(path.sep)[0],
+      repo: repoName(gitRoot(s.cwd as string)),
       branch: s.gitBranch,
     }));
+};
 
 // Modellen opvragen zonder prompt: de SDK start Claude Code, we lezen de lijst en sluiten meteen.
 const idle = async function* () {

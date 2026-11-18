@@ -18,13 +18,14 @@ const SessionSidebar = () => {
   const sessionId = useStore((s) => s.sessionId);
   const [search, setSearch] = useState('');
   const [scope, setScope] = useState<'project' | 'all'>('project');
-  const currentRepo = cwd && root ? cwd.slice(root.length + 1).split('/')[0] : null;
+  const currentRepo = cwd ? (root && cwd.startsWith(`${root}/`) ? cwd.slice(root.length + 1) : (cwd.split('/').pop() ?? cwd)) : null;
+  const inProject = (dir: string) => !!cwd && (dir === cwd || dir.startsWith(`${cwd}/`) || cwd.startsWith(`${dir}/`));
   const showAll = scope === 'all' || !currentRepo;
 
   const term = search.trim().toLowerCase();
   const visible = sessions.filter(
     (s) =>
-      (showAll || s.repo === currentRepo) &&
+      (showAll || inProject(s.cwd)) &&
       (!term || s.title.toLowerCase().includes(term) || s.repo.toLowerCase().includes(term)),
   );
 
