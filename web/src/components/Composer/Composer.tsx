@@ -1,3 +1,4 @@
+import { localCommands, runLocalCommand } from '../../localCommands';
 import { ArrowUp, Clock, Loader2, Mic, Paperclip, Quote, Square, X } from 'lucide-react';
 import { ClipboardEvent, DragEvent, FormEvent, KeyboardEvent, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import type { Attachment } from '../../../../shared/protocol';
@@ -16,6 +17,7 @@ import {
   runShellCommand,
   send,
   setLastSent,
+  setManageOpen,
   useApp,
   useStore,
 } from '../../store';
@@ -215,7 +217,7 @@ const Composer = () => {
   }, [Boolean(slash), hasManage, cwd]);
   const suggestions =
     slash && !suggestDismissed && commands
-      ? commands.filter((c) => c.name.toLowerCase().startsWith(slash[1].toLowerCase())).slice(0, 8)
+      ? [...commands, ...localCommands.filter((l) => !commands.some((c) => c.name === l.name))].filter((c) => c.name.toLowerCase().startsWith(slash[1].toLowerCase())).slice(0, 8)
       : [];
   const complete = (name: string) => {
     setText(`/${name} `);
@@ -308,6 +310,13 @@ const Composer = () => {
     const local = (() => {
       if (trimmed === '/usage') {
         openUsage();
+        return true;
+      }
+      if (runLocalCommand(trimmed)) {
+        return true;
+      }
+      if (trimmed === '/mcp') {
+        setManageOpen(true);
         return true;
       }
       if (trimmed === '/clear') {

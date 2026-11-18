@@ -1,0 +1,98 @@
+@use '../../stijl';
+
+.note {
+  @include stijl.klein;
+  margin: 0 0 var(--ruimte-3);
+  color: var(--tekst-gedempt);
+}
+
+.scope {
+  margin-bottom: var(--ruimte-4);
+}
+
+.scopeTitle {
+  @include stijl.klein;
+  display: flex;
+  align-items: baseline;
+  gap: var(--ruimte-2);
+  margin: 0 0 var(--ruimte-1);
+  font-weight: 600;
+  color: var(--tekst-hoofd);
+}
+
+.path {
+  overflow: hidden;
+  font-family: var(--font-mono);
+  font-size: 11px;
+  font-weight: 400;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: var(--tekst-vaag);
+}
+
+.rule {
+  display: flex;
+  align-items: center;
+  gap: var(--ruimte-2);
+  padding: 2px 0;
+  font-family: var(--font-mono);
+  font-size: 12px;
+
+  span:first-child {
+    flex: 1 1 auto;
+    min-width: 0;
+    overflow-wrap: anywhere;
+  }
+}
+
+.list {
+  max-height: 52vh;
+  overflow-y: auto;
+}
+
+.add {
+  display: flex;
+  gap: var(--ruimte-2);
+  margin-top: var(--ruimte-2);
+
+  input,
+  select {
+    height: 32px;
+    padding: 0 var(--ruimte-3);
+    border: 1px solid var(--hoogte-2-rand);
+    border-radius: var(--vorm-sm);
+    background: var(--hoogte-2-vlak);
+    color: var(--tekst-hoofd);
+    font-family: var(--font-mono);
+    font-size: 12px;
+  }
+
+  input {
+    flex: 1 1 auto;
+    min-width: 0;
+  }
+}
+
+.editor {
+  width: 100%;
+  height: 40vh;
+  padding: var(--ruimte-3);
+  border: 1px solid var(--hoogte-2-rand);
+  border-radius: var(--vorm-sm);
+  background: var(--hoogte-2-vlak);
+  color: var(--tekst-hoofd);
+  font-family: var(--font-mono);
+  font-size: 12px;
+  resize: vertical;
+}
+
+.actions {
+  display: flex;
+  align-items: center;
+  gap: var(--ruimte-2);
+  margin-top: var(--ruimte-2);
+}
+
+.error {
+  color: var(--status-negatief);
+}

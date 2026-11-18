@@ -2,6 +2,7 @@ import { TriangleAlert } from 'lucide-react';
 import styles from './App.module.scss';
 import { ChatArea } from './components/ChatView/ChatView';
 import Composer from './components/Composer/Composer';
+import ConfigPanel from './components/ConfigPanel/ConfigPanel';
 import ManagePanel from './components/ManagePanel/ManagePanel';
 import QuestionDialog from './components/QuestionDialog/QuestionDialog';
 import TerminalDialog from './components/TerminalDialog/TerminalDialog';
@@ -24,6 +25,7 @@ const App = () => {
   const manageOpen = useStore((s) => s.manageOpen);
   const usageOpen = useStore((s) => s.usageOpen);
   const settingsOpen = useStore((s) => s.settingsOpen);
+  const configOpen = useStore((s) => s.configOpen);
   const sidebarOpen = useStore((s) => s.sidebarOpen);
   const terminalDocked = useStore((s) => s.terminals.length > 0 && s.terminalMinimized);
   const hasPermission = useStore((s) => s.permissions.length > 0);
@@ -47,16 +49,17 @@ const App = () => {
           <TasksPanel />
           <Composer />
         </main>
+        <TerminalDialog />
       </div>
       <StatusBar />
       {pickerOpen && <ProjectPicker />}
       {manageOpen && <ManagePanel />}
+      {configOpen && <ConfigPanel />}
       {usageOpen && <UsagePanel />}
       {settingsOpen && <SettingsPage />}
       <SubagentDialog />
       {hasPermission && <PermissionPopup />}
       <QuestionDialog />
-      <TerminalDialog />
       <Notices />
     </div>
   );

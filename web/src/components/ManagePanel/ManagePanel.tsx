@@ -36,7 +36,7 @@ const ManagePanel = () => {
     setManageOpen(false);
     openTerminal(['/mcp'], refreshMcpAfterLogin);
   };
-  const [section, setSection] = useState<Section>('mcp');
+  const [section, setSection] = useState<Section>(useApp.getState().manageSection);
   const [filter, setFilter] = useState('');
 
   useEffect(() => {
