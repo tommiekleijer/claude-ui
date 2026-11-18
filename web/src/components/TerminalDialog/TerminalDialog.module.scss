@@ -118,11 +118,11 @@
 
 /* Ingeklapt: paneel rechts naast de chat (App maakt ruimte via .withDock). */
 .dock {
-  position: fixed;
-  /* relatief anker voor de sleepbalk */
-  top: var(--tabbalk-hoogte);
+  /* Binnen .body in App: precies het gebied tussen tabbalk en statusbalk. */
+  position: absolute;
+  top: 0;
   right: 0;
-  bottom: var(--statusbalk-hoogte);
+  bottom: 0;
   z-index: 20;
   display: flex;
   width: var(--dock-width);
