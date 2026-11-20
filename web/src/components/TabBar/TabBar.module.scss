@@ -103,6 +103,39 @@
   text-overflow: ellipsis;
 }
 
+.titleKnop {
+  padding: 2px var(--ruimte-1);
+  border: 0;
+  border-radius: 6px;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  text-align: left;
+  cursor: text;
+
+  &:hover {
+    background: var(--achtergrond-vlak);
+  }
+
+  &:focus-visible {
+    outline: 2px solid var(--accent-standaard);
+    outline-offset: 1px;
+  }
+}
+
+.titleInvoer {
+  flex: 1 1 auto;
+  min-width: 0;
+  padding: 2px var(--ruimte-1);
+  border: 1px solid var(--accent-standaard);
+  border-radius: 6px;
+  background: var(--achtergrond-vlak);
+  color: inherit;
+  font: inherit;
+  font-weight: 600;
+  outline: none;
+}
+
 .repo {
   @include stijl.label;
   flex: 0 1 auto;
@@ -111,6 +144,24 @@
   white-space: nowrap;
   text-overflow: ellipsis;
   color: var(--tekst-vaag);
+}
+
+.repoKnop {
+  padding: 2px var(--ruimte-1);
+  border: 0;
+  border-radius: 6px;
+  background: transparent;
+  cursor: pointer;
+
+  &:hover {
+    background: var(--achtergrond-vlak);
+    color: var(--accent-standaard);
+  }
+
+  &:focus-visible {
+    outline: 2px solid var(--accent-standaard);
+    outline-offset: 1px;
+  }
 }
 
 .close {

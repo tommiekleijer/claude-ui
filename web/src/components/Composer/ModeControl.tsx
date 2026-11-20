@@ -1,7 +1,8 @@
 import { Hand, Map, Pencil, ShieldOff, Sparkles } from 'lucide-react';
 import { ComponentProps, ReactNode, useEffect } from 'react';
 import type { Mode } from '../../../../shared/protocol';
-import { isTerminalKey, send, useStore } from '../../store';
+import { matchesShortcut, useShortcut } from '../../shortcuts';
+import { send, useStore } from '../../store';
 import Select from '../ui/Select';
 
 type Toon = ComponentProps<typeof Select>['toon'];
@@ -20,10 +21,11 @@ const CYCLE: Mode[] = ['default', 'acceptEdits', 'plan', 'auto'];
 
 const ModeControl = () => {
   const mode = (useStore((s) => s.permissionMode) ?? 'default') as Mode;
+  const cycleKey = useShortcut('cycleMode');
 
   useEffect(() => {
     const handleKey = (event: KeyboardEvent) => {
-      if (event.key === 'Tab' && event.shiftKey && !event.ctrlKey && !event.altKey && !event.metaKey && !isTerminalKey(event)) {
+      if (matchesShortcut(event, 'cycleMode')) {
         event.preventDefault();
         const next = CYCLE[(CYCLE.indexOf(mode) + 1) % CYCLE.length];
         send({ type: 'set_mode', mode: next });
@@ -37,7 +39,7 @@ const ModeControl = () => {
 
   return (
     <Select
-      title="Permissiemodus (Shift+Tab om te wisselen)"
+      title={`Permissiemodus (${cycleKey} om te wisselen)`}
       toon={current.tone}
       label={
         <>

@@ -40,3 +40,8 @@
 .withDock {
   padding-right: var(--dock-width);
 }
+
+/* Terminal links: hij staat dan in de flow tussen zijbalk en chat. */
+.withDockLeft .main {
+  order: 1;
+}

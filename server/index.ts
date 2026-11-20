@@ -1,5 +1,5 @@
 import fastifyStatic from '@fastify/static';
-import { getSessionMessages, getSubagentMessages, listSubagents } from '@anthropic-ai/claude-agent-sdk';
+import { getSessionMessages, getSubagentMessages, listSubagents, renameSession } from '@anthropic-ai/claude-agent-sdk';
 import Fastify from 'fastify';
 import { existsSync } from 'node:fs';
 import { readFile } from 'node:fs/promises';
@@ -17,6 +17,8 @@ import {
   getRoot,
   isDirectory,
   listDirs,
+  listFolder,
+  moveSession,
   readRecent,
   detectDuplicateConnectors,
   saveSettings,
@@ -30,9 +32,10 @@ import {
 } from './projects.js';
 import { ClaudeSession, lastLimits, setLastLimits } from './session.js';
 import { fetchUsage, limitsFromReport } from './usage.js';
-import { runShell, terminalAvailable, Terminals } from './terminal.js';
+import { authLogout, authStatus, cancelLogin, runShell, sendLoginCode, startLogin, terminalAvailable, Terminals } from './terminal.js';
 
-// Usage via /usage (geen tokens): direct bij het starten, zodat de statusbalk meteen gevuld is, en daarna elke 30 seconden.
+// Usage via /usage (geen tokens): direct bij het starten, zodat de statusbalk meteen gevuld is, daarna elke 5 minuten en bij
+// het openen van het Usage-venster. Tijdens een chat komen de limieten live binnen via rate_limit_event.
 const connections = new Set<(event: ServerEvent) => void>();
 const refreshUsage = async () => {
   const report = await fetchUsage().catch(() => null);
@@ -45,9 +48,6 @@ const refreshUsage = async () => {
   }
   return report;
 };
-void refreshUsage();
-void detectDuplicateConnectors().catch(() => undefined);
-setInterval(() => void refreshUsage(), 30 * 1000);
 
 // Nooit via een API-key afrekenen: de SDK valt dan terug op het abonnement van `claude login`.
 const apiKeyPresent = Boolean(process.env.ANTHROPIC_API_KEY);
@@ -69,6 +69,12 @@ const STARTED_BY_APP = process.env.CLAUDE_UI_PARENT === '1';
 delete process.env.PORT;
 delete process.env.ELECTRON_RUN_AS_NODE;
 delete process.env.CLAUDE_UI_PARENT;
+
+// Pas na het opschonen van process.env: het hulpproces neemt die env over en blijft de hele levensduur draaien.
+void refreshUsage();
+void detectDuplicateConnectors().catch(() => undefined);
+setInterval(() => void refreshUsage(), 5 * 60 * 1000);
+
 const DEV = process.env.CLAUDE_UI_DEV === '1';
 const VITE_PORT = Number(process.env.VITE_PORT ?? 5173);
 
@@ -138,16 +144,34 @@ const handleConnection = async (ws: WebSocket) => {
     session = null;
   };
 
+  const resumeSession = async (sessionId: string, dir: string) => {
+    closeSession();
+    resumeId = sessionId;
+    const messages = await getSessionMessages(sessionId, { dir });
+    send({ type: 'history', sessionId, items: historyItems(messages) });
+    const tokens = lastContextTokens(messages);
+    // Zonder bekend vensterformaat: meer dan 200k tokens kan alleen in een venster van 1M.
+    const max = Math.max(savedContextMax() ?? 0, tokens > 200_000 ? 1_000_000 : 200_000);
+    if (tokens) {
+      const percentage = Math.min(100, Math.round((tokens / max) * 100));
+      send({ type: 'context', percentage, totalTokens: tokens, maxTokens: max });
+    }
+  };
+
   const handle = async (event: ClientEvent) => {
     switch (event.type) {
       case 'set_root':
         await setRoot(event.path);
         send({ type: 'root', root: getRoot(), recent: await readRecent() });
         send({ type: 'dirs', ...(await listDirs()) });
+        send({ type: 'folder', ...(await listFolder(getRoot())) });
         await sendSessions();
         return;
       case 'list_dirs':
         send({ type: 'dirs', ...(await listDirs()) });
+        return;
+      case 'list_folder':
+        send({ type: 'folder', ...(await listFolder(event.path ?? getRoot())) });
         return;
       case 'open_project':
         await openProject(event.cwd);
@@ -160,19 +184,22 @@ const handleConnection = async (ws: WebSocket) => {
         if (event.cwd !== cwd && !(await openProject(event.cwd))) {
           return;
         }
-        closeSession();
-        resumeId = event.sessionId;
-        {
-          const messages = await getSessionMessages(event.sessionId, { dir: event.cwd });
-          send({ type: 'history', sessionId: event.sessionId, items: historyItems(messages) });
-          const tokens = lastContextTokens(messages);
-          // Zonder bekend vensterformaat: meer dan 200k tokens kan alleen in een venster van 1M.
-          const max = Math.max(savedContextMax() ?? 0, tokens > 200_000 ? 1_000_000 : 200_000);
-          if (tokens) {
-            const percentage = Math.min(100, Math.round((tokens / max) * 100));
-            send({ type: 'context', percentage, totalTokens: tokens, maxTokens: max });
-          }
+        await resumeSession(event.sessionId, event.cwd);
+        return;
+      case 'move_session':
+        if (!(await openProject(event.cwd))) {
+          return;
         }
+        await moveSession(event.sessionId, cwd as string);
+        await resumeSession(event.sessionId, cwd as string);
+        await sendSessions();
+        return;
+      case 'rename_session':
+        await renameSession(event.sessionId, event.title);
+        if (session?.sessionId === event.sessionId) {
+          await session.rename(event.title);
+        }
+        await sendSessions();
         return;
       case 'send':
         await ensureSession()?.push(event.text, event.attachments, event.force);
@@ -238,6 +265,22 @@ const handleConnection = async (ws: WebSocket) => {
         }
         return;
       }
+      case 'auth_status':
+        send({ type: 'auth_status', status: await authStatus() });
+        return;
+      case 'auth_login':
+        startLogin(send, event);
+        return;
+      case 'auth_code':
+        sendLoginCode(event.code.trim());
+        return;
+      case 'auth_cancel':
+        cancelLogin();
+        return;
+      case 'auth_logout':
+        await authLogout();
+        send({ type: 'auth_status', status: await authStatus() });
+        return;
       case 'stop_task':
         await session?.stopTask(event.taskId);
         return;
@@ -264,7 +307,7 @@ const handleConnection = async (ws: WebSocket) => {
         send({ type: 'settings', ...settings });
         return;
       case 'save_ui':
-        await saveUi({ opacity: event.opacity, sidebarOpen: event.sidebarOpen, dockWidth: event.dockWidth, thema: event.thema, meldingen: event.meldingen, accent: event.accent, speechLanguage: event.speechLanguage, speechModel: event.speechModel });
+        await saveUi({ opacity: event.opacity, sidebarOpen: event.sidebarOpen, dockWidth: event.dockWidth, dockSide: event.dockSide, thema: event.thema, meldingen: event.meldingen, accent: event.accent, speechLanguage: event.speechLanguage, speechModel: event.speechModel, promptSuggestions: event.promptSuggestions, shortcuts: event.shortcuts });
         return;
       case 'question_response':
         session?.answerQuestion(event.id, event.answers, event.chat);
@@ -326,6 +369,7 @@ const handleConnection = async (ws: WebSocket) => {
   ws.on('close', () => connections.delete(send));
   ws.on('close', closeSession);
   ws.on('close', () => terminals.closeAll());
+  ws.on('close', () => cancelLogin(send));
 
   send({
     type: 'hello',

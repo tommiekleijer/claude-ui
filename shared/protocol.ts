@@ -68,7 +68,7 @@ export type UsageReport = {
 export type QuestionOption = { label: string; description: string; preview?: string };
 export type Question = { question: string; header: string; options: QuestionOption[]; multiSelect: boolean };
 export type Thema = 'systeem' | 'licht' | 'donker';
-export type UiSettings = { opacity: number; sidebarOpen: boolean; dockWidth: number; thema: Thema; meldingen: boolean; accent: string | null; speechLanguage: 'nl' | 'en' | 'auto'; speechModel: 'base' | 'small' | 'turbo' };
+export type UiSettings = { opacity: number; sidebarOpen: boolean; dockWidth: number; dockSide: 'left' | 'right'; thema: Thema; meldingen: boolean; accent: string | null; speechLanguage: 'nl' | 'en' | 'auto'; speechModel: 'base' | 'small' | 'turbo'; promptSuggestions: boolean; shortcuts: Record<string, string> };
 export type SavedTab = { cwd: string; sessionId: string | null };
 export type SavedTabs = { tabs: SavedTab[]; active: number };
 export type Settings = { model: string | null; effort: Effort | null; mode: Mode | null };
@@ -87,6 +87,12 @@ export type ScopeSettings = {
   error?: string;
 };
 export type ConfigInfo = { memory: MemoryFile[]; scopes: ScopeSettings[] };
+/** Uitvoer van `claude auth status --json` (de velden die de app gebruikt); error als die niet te lezen was. */
+export type AuthStatus = { loggedIn: boolean; authMethod: string; email?: string; orgName?: string; subscriptionType?: string; error?: string };
+export type TokenCount = { name: string; tokens: number };
+/** Wat er los van het gesprek zelf standaard in de context staat. */
+export type ContextBreakdown = { categories: TokenCount[]; memoryFiles: TokenCount[]; mcpServers: TokenCount[] };
+export type ContextInfo = { percentage: number; totalTokens: number; maxTokens: number; breakdown?: ContextBreakdown };
 
 export type ServerEvent =
   | { type: 'hello'; apiKeyPresent: boolean; recent: string[]; root: string; models: ModelOption[]; limits: Limits; tabs: SavedTabs; ui: UiSettings; terminal: boolean }
@@ -94,8 +100,9 @@ export type ServerEvent =
   | { type: 'root'; root: string; recent: string[] }
   | { type: 'limits'; limits: Limits }
   | { type: 'usage_report'; report: UsageReport }
-  | { type: 'context'; percentage: number; totalTokens: number; maxTokens: number }
+  | ({ type: 'context' } & ContextInfo)
   | { type: 'dirs'; path: string; dirs: string[] }
+  | { type: 'folder'; path: string; parent: string | null; dirs: { name: string; readable: boolean }[]; error?: string }
   | { type: 'project'; cwd: string; recent: string[] }
   | { type: 'sessions'; sessions: SessionSummary[] }
   | { type: 'history'; sessionId: string; items: ChatItem[] }
@@ -132,18 +139,27 @@ export type ServerEvent =
   | { type: 'shell_result'; id: string; command: string; output: string; exitCode: number }
   /** Een /-command dat alleen in de terminal werkt: de app biedt aan het in de ingebouwde terminal te openen. */
   | { type: 'needs_terminal'; command: string }
+  /** Niet (meer) ingelogd: de app opent het inlogscherm. */
+  | { type: 'needs_login' }
+  | { type: 'auth_status'; status: AuthStatus }
+  /** url: de inloglink die `claude auth login` print, voor als de browser niet opent. */
+  | { type: 'auth_login'; state: 'waiting' | 'done' | 'failed'; url?: string; error?: string }
   | { type: 'pty_started'; id: string; command: string }
   | { type: 'pty_data'; id: string; data: string }
   | { type: 'pty_exit'; id: string; code: number }
   | { type: 'image'; id: string; path: string; dataUrl: string | null; error?: string }
+  | { type: 'notice'; message: string }
   | { type: 'error'; message: string };
 
 export type ClientEvent =
   | { type: 'list_dirs' }
+  | { type: 'list_folder'; path?: string }
   | { type: 'set_root'; path: string }
   | { type: 'open_project'; cwd: string }
   | { type: 'new_session' }
   | { type: 'resume_session'; sessionId: string; cwd: string }
+  | { type: 'move_session'; sessionId: string; cwd: string }
+  | { type: 'rename_session'; sessionId: string; title: string }
   | { type: 'send'; text: string; attachments: Attachment[]; force?: boolean }
   | { type: 'interrupt' }
   | { type: 'set_model'; model: string }
@@ -168,6 +184,12 @@ export type ClientEvent =
   | { type: 'save_memory'; path: string; content: string }
   | { type: 'permission_rule'; scope: ScopeSettings['scope']; list: 'allow' | 'ask' | 'deny'; rule: string; remove: boolean }
   | { type: 'usage' }
+  | { type: 'auth_status' }
+  | { type: 'auth_login'; console: boolean; sso: boolean; email: string }
+  /** De code van de inlogpagina, als de browser niet automatisch terugkoppelt. */
+  | { type: 'auth_code'; code: string }
+  | { type: 'auth_cancel' }
+  | { type: 'auth_logout' }
   | { type: 'subagent'; toolUseId: string }
   | { type: 'mcp_toggle'; name: string; enabled: boolean }
   | { type: 'mcp_reconnect'; name: string }

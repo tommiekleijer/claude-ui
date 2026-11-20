@@ -1,6 +1,7 @@
-import { listSessions, query } from '@anthropic-ai/claude-agent-sdk';
-import { existsSync, readFileSync } from 'node:fs';
-import { mkdir, readdir, readFile, stat, writeFile } from 'node:fs/promises';
+import { listSessions, query, type Query, type SDKResultMessage, type SDKUserMessage } from '@anthropic-ai/claude-agent-sdk';
+import { EventEmitter, on } from 'node:events';
+import { constants, existsSync, readFileSync } from 'node:fs';
+import { access, appendFile, mkdir, readdir, readFile, realpath, rename, stat, writeFile } from 'node:fs/promises';
 import { homedir } from 'node:os';
 import path from 'node:path';
 import type { Effort, Limits, ModelOption, SavedTabs, SessionSummary, UiSettings } from '../shared/protocol.js';
@@ -73,32 +74,28 @@ const urlOf = (config: unknown) => (config as { url?: string } | undefined)?.url
 
 /** Bepaalt de dubbele connectors opnieuw (plugin-servers staan er alleen direct na het starten in). */
 export const detectDuplicateConnectors = async () => {
-  const q = query({ prompt: idle(), options: { cwd: homedir(), env: { ...process.env }, settingSources: ['user'], persistSession: false } });
-  try {
-    await q.initializationResult();
-    const pluginUrls = new Set(
-      (await q.mcpServerStatus()).filter((s) => s.name.startsWith('plugin:')).flatMap((s) => urlOf(s.config) ?? []),
-    );
-    if (pluginUrls.size === 0) {
-      return duplicateConnectors();
-    }
-    for (let i = 0; i < 10; i++) {
-      await new Promise((r) => setTimeout(r, 1000));
-      const connectors = (await q.mcpServerStatus()).filter((s) => s.name.startsWith('claude.ai '));
-      if (connectors.length > 0) {
-        const duplicates = connectors.filter((s) => pluginUrls.has(urlOf(s.config) ?? '')).map((s) => s.name);
-        await writeConfig({ duplicateConnectors: duplicates });
-        return duplicates;
-      }
-    }
+  const { q } = helperQuery();
+  await q.initializationResult();
+  const pluginUrls = new Set(
+    (await q.mcpServerStatus()).filter((s) => s.name.startsWith('plugin:')).flatMap((s) => urlOf(s.config) ?? []),
+  );
+  if (pluginUrls.size === 0) {
     return duplicateConnectors();
-  } finally {
-    q.close();
   }
+  for (let i = 0; i < 10; i++) {
+    await new Promise((r) => setTimeout(r, 1000));
+    const connectors = (await q.mcpServerStatus()).filter((s) => s.name.startsWith('claude.ai '));
+    if (connectors.length > 0) {
+      const duplicates = connectors.filter((s) => pluginUrls.has(urlOf(s.config) ?? '')).map((s) => s.name);
+      await writeConfig({ duplicateConnectors: duplicates });
+      return duplicates;
+    }
+  }
+  return duplicateConnectors();
 };
 
 /** Weergave-instellingen (dekking, zijbalk); in de backend omdat de poort, en dus de opslag van het venster, per start wisselt. */
-export const savedUi = (): UiSettings => ({ opacity: 100, sidebarOpen: true, dockWidth: 460, thema: 'systeem', meldingen: true, accent: null, speechLanguage: 'nl', speechModel: 'base', ...readConfig().ui });
+export const savedUi = (): UiSettings => ({ opacity: 100, sidebarOpen: true, dockWidth: 460, dockSide: 'right', thema: 'systeem', meldingen: true, accent: null, speechLanguage: 'nl', speechModel: 'base', promptSuggestions: true, shortcuts: {}, ...readConfig().ui });
 export const saveUi = (ui: UiSettings) => writeConfig({ ui });
 
 export const savedTabs = (): SavedTabs => readConfig().tabs ?? { tabs: [], active: 0 };
@@ -162,6 +159,69 @@ export const listDirs = async () => {
   return { path: root, dirs: found.sort((a, b) => a.localeCompare(b)) };
 };
 
+const canOpen = (dir: string) =>
+  access(dir, constants.R_OK | constants.X_OK).then(
+    () => true,
+    () => false,
+  );
+
+export const listFolder = async (dir: string) => {
+  const resolved = path.resolve(dir.replace(/^~(?=$|\/)/, homedir()));
+  const parent = resolved === path.dirname(resolved) ? null : path.dirname(resolved);
+  const all = await readdir(resolved, { withFileTypes: true }).catch((error: NodeJS.ErrnoException) => {
+    if (error.code === 'EACCES' || error.code === 'EPERM') {
+      return null;
+    }
+    throw error;
+  });
+  if (!all) {
+    return { path: resolved, parent, dirs: [], error: `Geen toegang tot ${resolved}` };
+  }
+  const entries = all.filter((e) => !e.name.startsWith('.'));
+  const isDir = await Promise.all(entries.map((e) => e.isDirectory() || (e.isSymbolicLink() && isDirectory(path.join(resolved, e.name)))));
+  const dirs = await Promise.all(
+    entries
+      .filter((_, i) => isDir[i])
+      .map(async (e) => ({ name: e.name, readable: await canOpen(path.join(resolved, e.name)) })),
+  );
+  return { path: resolved, parent, dirs: dirs.sort((a, b) => a.name.localeCompare(b.name)) };
+};
+
+const claudeProjects = path.join(homedir(), '.claude', 'projects');
+
+const projectDirName = (dir: string) => {
+  const name = dir.replace(/[^a-zA-Z0-9]/g, '-');
+  if (name.length <= 200) {
+    return name;
+  }
+  let hash = 0;
+  for (let i = 0; i < dir.length; i++) {
+    hash = ((hash << 5) - hash + dir.charCodeAt(i)) | 0;
+  }
+  return `${name.slice(0, 200)}-${Math.abs(hash).toString(36)}`;
+};
+
+// Zoals Claude Code zelf een gesprek verhuist bij `cd`: transcript en subagent-map naar de projectmap van de nieuwe
+// cwd, plus een `relocated`-regel; listSessions leest de cwd daaruit (anders uit de eerste regel, dus de oude map).
+export const moveSession = async (sessionId: string, cwd: string) => {
+  const real = await realpath(cwd);
+  const target = path.join(claudeProjects, projectDirName(real));
+  const source = (await readdir(claudeProjects))
+    .map((dir) => path.join(claudeProjects, dir))
+    .find((dir) => existsSync(path.join(dir, `${sessionId}.jsonl`)));
+  if (!source) {
+    return;
+  }
+  if (source !== target) {
+    await mkdir(target, { recursive: true });
+    await rename(path.join(source, `${sessionId}.jsonl`), path.join(target, `${sessionId}.jsonl`));
+    if (existsSync(path.join(source, sessionId))) {
+      await rename(path.join(source, sessionId), path.join(target, sessionId));
+    }
+  }
+  await appendFile(path.join(target, `${sessionId}.jsonl`), `${JSON.stringify({ type: 'relocated', sessionId, relocatedCwd: real })}\n`);
+};
+
 /** De dichtstbijzijnde map (zelf of erboven) met `.git`; zonder git de map zelf. */
 const gitRoot = (dir: string) => {
   for (let d = dir; ; d = path.dirname(d)) {
@@ -198,25 +258,67 @@ export const allSessions = async (): Promise<SessionSummary[]> => {
     }));
 };
 
-// Modellen opvragen zonder prompt: de SDK start Claude Code, we lezen de lijst en sluiten meteen.
-const idle = async function* () {
-  await new Promise(() => undefined);
+type Helper = { q: Query; ask: (prompt: string) => Promise<SDKResultMessage> };
+let helper: Helper | null = null;
+
+/**
+ * Eén doorlopend hulpproces voor modellen, connectors en /usage: elk los query() is een nieuw Claude Code-proces
+ * dat als sessie telt en alle MCP-servers opnieuw verbindt. Valt het weg, dan start de volgende aanvraag een nieuw.
+ */
+export const helperQuery = (): Helper => {
+  if (helper) {
+    return helper;
+  }
+  const prompts = new EventEmitter();
+  // Nu al luisteren: de SDK leest de prompt pas later, en een eerdere prompt zou anders verloren gaan.
+  const incoming = on(prompts, 'prompt');
+  // persistSession: false, anders komt elke prompt in een sessie in ~/.claude/projects.
+  const q = query({
+    prompt: (async function* () {
+      for await (const [content] of incoming) {
+        yield { type: 'user', parent_tool_use_id: null, message: { role: 'user', content } } as SDKUserMessage;
+      }
+    })(),
+    options: { cwd: homedir(), env: { ...process.env }, settingSources: ['user'], persistSession: false },
+  });
+  // Claude Code beantwoordt prompts op volgorde, dus elk result hoort bij de oudste wachtende aanvraag.
+  const waiting: { resolve: (result: SDKResultMessage) => void; reject: (error: Error) => void }[] = [];
+  const current: Helper = {
+    q,
+    ask: (prompt) =>
+      new Promise((resolve, reject) => {
+        waiting.push({ resolve, reject });
+        prompts.emit('prompt', prompt);
+      }),
+  };
+  helper = current;
+  void (async () => {
+    for await (const message of q) {
+      if (message.type === 'result') {
+        waiting.shift()?.resolve(message);
+      }
+    }
+  })()
+    .catch(() => undefined)
+    .finally(() => {
+      if (helper === current) {
+        helper = null;
+      }
+      for (const w of waiting.splice(0)) {
+        w.reject(new Error('Hulpproces van Claude Code is gestopt.'));
+      }
+    });
+  return current;
 };
 
 let modelsPromise: Promise<ModelOption[]> | null = null;
 export const availableModels = () => {
-  modelsPromise ??= (async () => {
-    const q = query({ prompt: idle(), options: { cwd: homedir(), env: { ...process.env }, settingSources: ['user'], persistSession: false } });
-    try {
-      return (await q.supportedModels()).map((m) => ({
-        value: m.value,
-        label: m.displayName,
-        efforts: m.supportedEffortLevels ?? [],
-      }));
-    } finally {
-      q.close();
-    }
-  })().catch(() => {
+  modelsPromise ??= (async () =>
+    (await helperQuery().q.supportedModels()).map((m) => ({
+      value: m.value,
+      label: m.displayName,
+      efforts: m.supportedEffortLevels ?? [],
+    })))().catch(() => {
     modelsPromise = null;
     return [];
   });

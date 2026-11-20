@@ -49,6 +49,49 @@
   color: var(--accent-standaard) !important;
 }
 
+.chevron {
+  margin-left: auto;
+}
+
+.section {
+  @include stijl.label;
+  padding: var(--ruimte-2) var(--ruimte-3) var(--ruimte-1);
+  color: var(--tekst-vaag);
+}
+
+.browse {
+  position: sticky;
+  top: 0;
+  z-index: 1;
+  display: flex;
+  align-items: center;
+  gap: var(--ruimte-2);
+  margin-top: var(--ruimte-2);
+  padding: var(--ruimte-1) 0;
+  background: var(--hoogte-4-vlak);
+}
+
+.browsePath {
+  min-width: 0;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+  font-family: var(--font-mono);
+  font-size: 12px;
+  color: var(--tekst-gedempt);
+}
+
+.locked {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.error {
+  @include stijl.klein;
+  padding: var(--ruimte-2) var(--ruimte-3);
+  color: var(--status-negatief);
+}
+
 .empty {
   @include stijl.klein;
   padding: var(--ruimte-2) var(--ruimte-3);

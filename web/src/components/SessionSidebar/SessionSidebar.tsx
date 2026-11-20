@@ -1,6 +1,6 @@
 import { FolderGit2, MessageSquare, Plus, Search, Settings2 } from 'lucide-react';
 import { useState } from 'react';
-import { newSessionTab, openSession, setManageOpen, setPickerOpen, useStore } from '../../store';
+import { newSessionTab, openSession, setManageOpen, setPicker, useStore } from '../../store';
 import { Icoonknop, Segmentbalk, Zoekveld } from '../../vertex';
 import styles from './SessionSidebar.module.scss';
 
@@ -32,7 +32,7 @@ const SessionSidebar = () => {
   return (
     <nav className={styles.sidebar} aria-label="Sessies">
       <div className={styles.top}>
-        <button type="button" className={styles.project} onClick={() => setPickerOpen(true)} title={cwd ?? ''}>
+        <button type="button" className={styles.project} onClick={() => setPicker('open')} title={cwd ?? ''}>
           <FolderGit2 size={16} />
           <span className={styles.projectName}>{currentRepo ?? 'Kies een project'}</span>
         </button>
