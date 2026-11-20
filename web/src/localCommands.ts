@@ -1,13 +1,13 @@
 import type { ChatItem } from '../../shared/protocol';
-import { currentTab, notify, openConfig, openManage, openSettings, openTerminal, setSidebarOpen, useApp } from './store';
+import { currentTab, notify, openAuth, openConfig, openManage, openSettings, openTerminal, setSidebarOpen, useApp } from './store';
 
 /** Commands die in Claude Code alleen in de terminal werken; de app handelt ze zelf af. */
 export const localCommands = [
-  { name: 'login', description: 'Inloggen met je Claude-account (opent de terminal)' },
-  { name: 'logout', description: 'Uitloggen (opent de terminal)' },
+  { name: 'login', description: 'Inloggen met je Claude-account' },
+  { name: 'logout', description: 'Uitloggen' },
   { name: 'plugin', description: 'Plugins beheren (opent de terminal)' },
   { name: 'help', description: 'Alle commands en skills' },
-  { name: 'status', description: 'Model, modus, map en MCP-servers' },
+  { name: 'status', description: 'Account, model, modus, map en MCP-servers' },
   { name: 'memory', description: 'CLAUDE.md-bestanden bewerken' },
   { name: 'permissions', description: 'Toestemmingsregels (allow / ask / deny)' },
   { name: 'hooks', description: 'Geconfigureerde hooks bekijken' },
@@ -49,23 +49,6 @@ const exportChat = () => {
   notify(`Chat opgeslagen als ${name}`);
 };
 
-const status = () => {
-  const { model, permissionMode, cwd, sessionId, apiKeySource, manage } = currentTab();
-  const mcp = manage?.mcp ?? [];
-  notify(
-    [
-      `Model: ${model ?? 'standaard'}`,
-      `Modus: ${permissionMode ?? '-'}`,
-      `Map: ${cwd ?? '-'}`,
-      sessionId ? `Sessie: ${sessionId.slice(0, 8)}` : null,
-      `Login: ${apiKeySource && apiKeySource !== 'none' ? `API-key (${apiKeySource})` : 'abonnement'}`,
-      mcp.length ? `MCP: ${mcp.filter((m) => m.status === 'connected').length}/${mcp.length} verbonden` : null,
-    ]
-      .filter(Boolean)
-      .join(' · '),
-  );
-};
-
 const notApplicable: Record<string, string> = {
   vim: '/vim hoort bij de terminal; het invoerveld van de app heeft geen vim-modus.',
   'terminal-setup': '/terminal-setup is voor de terminal en niet nodig in de app.',
@@ -75,7 +58,7 @@ const notApplicable: Record<string, string> = {
   'add-dir': 'Extra mappen toevoegen (/add-dir) kan nog niet in de app.',
 };
 
-/** Commands die de echte Claude Code nodig hebben (inlogflow, plugin-beheer): in de ingebouwde terminal. */
+/** Commands die de echte Claude Code nodig hebben (plugin-beheer): in de ingebouwde terminal. */
 const inTerminal = (command: string) => () => {
   if (useApp.getState().terminalAvailable) {
     openTerminal([command]);
@@ -85,12 +68,12 @@ const inTerminal = (command: string) => () => {
 };
 
 const actions: Record<string, () => void> = {
-  login: inTerminal('/login'),
-  logout: inTerminal('/logout'),
+  login: openAuth,
+  logout: openAuth,
   plugin: inTerminal('/plugin'),
   help: () => openManage('commands'),
   agents: () => openManage('agents'),
-  status,
+  status: openAuth,
   memory: () => openConfig('memory'),
   permissions: () => openConfig('permissions'),
   hooks: () => openConfig('hooks'),

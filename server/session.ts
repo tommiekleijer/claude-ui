@@ -5,6 +5,7 @@ import {
   type Query,
   type SDKMessage,
   type SDKUserMessage,
+  type HookCallback,
 } from '@anthropic-ai/claude-agent-sdk';
 import { mkdir, readFile, writeFile } from 'node:fs/promises';
 import { homedir } from 'node:os';
@@ -21,9 +22,11 @@ import type {
   ServerEvent,
   Settings,
   TaskInfo,
+  Usage,
 } from '../shared/protocol.js';
+import { compactBashOutput } from './bashOutput.js';
 import { assistantBlocks, toolResults, toolSummary } from './mapMessages.js';
-import { duplicateConnectors, saveContextMax, saveLimits, savedContextMax, savedLimits } from './projects.js';
+import { duplicateConnectors, saveContextMax, saveLimits, savedContextMax, savedLimits, savedUi } from './projects.js';
 
 // Laatst bekende abonnementslimieten, gedeeld over verbindingen zodat ze direct zichtbaar zijn.
 export let lastLimits: Limits = savedLimits();
@@ -48,6 +51,16 @@ const saveUpload = async (attachment: Attachment) => {
 };
 
 type Send = (event: ServerEvent) => void;
+
+const CATEGORY_NAMES: Record<string, string> = {
+  system_prompt: 'Systeemprompt',
+  system_tools: 'Ingebouwde tools',
+  mcp_tools: 'MCP-tools',
+  mcp_instructions: 'MCP-instructies',
+  custom_agents: 'Subagents',
+  memory_files: 'CLAUDE.md en geheugen',
+  skills: 'Skills',
+};
 
 type PendingPermission = {
   resolve: (result: PermissionResult) => void;
@@ -143,6 +156,8 @@ export class ClaudeSession {
   /** Live gesprek per subagent, op id van de Agent-tool die hem startte. */
   private readonly subagentChats = new Map<string, ChatItem[]>();
   private readonly subagentTimers = new Map<string, ReturnType<typeof setTimeout>>();
+  /** Tokentotalen tot nu toe (modelUsage telt op over de hele sessie); null = onbekend, bij een hervatte sessie. */
+  private usageTotals: Usage | null;
   private readonly q: Query;
 
   constructor(
@@ -153,6 +168,7 @@ export class ClaudeSession {
     private readonly onTurnDone: () => void,
   ) {
     this.sessionId = resume;
+    this.usageTotals = resume ? null : { input: 0, output: 0, cacheRead: 0, cacheCreation: 0 };
     this.q = query({
       prompt: this.queue,
       options: {
@@ -161,9 +177,11 @@ export class ClaudeSession {
         model: settings.model ?? undefined,
         effort: settings.effort ?? undefined,
         // CLAUDE_UI: je eigen hooks (bv. meldingen) kunnen hiermee overslaan; de app meldt zelf.
-        env: { ...process.env, CLAUDE_UI: '1' },
+        // CLAUDE_CODE_ARTIFACT: de CLI zet de Artifact-tool in SDK-sessies standaard uit ("sdk_default_off");
+        // vóór de spread zodat een eigen CLAUDE_CODE_ARTIFACT=0 (net als in de terminal) hem uit laat.
+        env: { CLAUDE_CODE_ARTIFACT: '1', ...process.env, CLAUDE_UI: '1' },
         includePartialMessages: true,
-        promptSuggestions: true,
+        promptSuggestions: savedUi().promptSuggestions,
         permissionMode: settings.mode ?? undefined,
         // Alleen nodig zodat de gebruiker zelf 'bypassPermissions' kan kiezen; zonder die keuze verandert er niets.
         allowDangerouslySkipPermissions: true,
@@ -171,6 +189,10 @@ export class ClaudeSession {
         skills: 'all',
         settings: { deniedMcpServers: duplicateConnectors().map((serverName) => ({ serverName })) },
         abortController: this.abort,
+        hooks: {
+          PostToolUse: [{ matcher: 'Bash', hooks: [compactBashOutput] }],
+          PostModelSwitch: [{ hooks: [this.warnCacheBreak] }],
+        },
         canUseTool: (toolName, input, options) =>
           new Promise<PermissionResult>((resolve) => {
             const id = options.toolUseID;
@@ -220,6 +242,22 @@ export class ClaudeSession {
     }
     this.turnActive = true;
     this.queue.push(message);
+  }
+
+  /** Een andere model-id kan de prompt-cache van het vorige model niet gebruiken: de volgende beurt schrijft alles opnieuw weg. */
+  private readonly warnCacheBreak: HookCallback = async (input) => {
+    if (input.hook_event_name === 'PostModelSwitch' && input.source === 'sdk' && input.prompt_cache_warm && input.context_tokens > 0) {
+      this.send({
+        type: 'notice',
+        message: `Model gewisseld midden in het gesprek: de prompt-cache (${Math.round(input.context_tokens / 1000)}k tokens) gaat verloren en wordt bij de volgende beurt opnieuw opgebouwd.`,
+      });
+    }
+    return {};
+  };
+
+  /** Het lopende Claude Code-proces schrijft zijn eigen titel steeds opnieuw in het transcript; zonder dit zet het de oude naam terug. */
+  async rename(title: string) {
+    await (this.q as Query & { renameSession(title: string, sessionId?: string): Promise<void> }).renameSession(title, this.sessionId ?? undefined);
   }
 
   async setModel(model: string) {
@@ -470,11 +508,22 @@ export class ClaudeSession {
       if (usage.maxTokens && usage.maxTokens !== savedContextMax()) {
         void saveContextMax(usage.maxTokens);
       }
+      const servers = new Map<string, number>();
+      for (const tool of usage.mcpTools.filter((t) => t.isLoaded !== false)) {
+        servers.set(tool.serverName, (servers.get(tool.serverName) ?? 0) + tool.tokens);
+      }
       this.send({
         type: 'context',
         percentage: Math.min(100, Math.round(usage.percentage)),
         totalTokens: usage.totalTokens,
         maxTokens: usage.maxTokens,
+        breakdown: {
+          categories: usage.categories
+            .filter((c) => c.kind === 'used' && c.id !== 'messages' && c.tokens > 0)
+            .map((c) => ({ name: (c.id && CATEGORY_NAMES[c.id]) || c.name, tokens: c.tokens })),
+          memoryFiles: usage.memoryFiles.map((f) => ({ name: f.path, tokens: f.tokens })),
+          mcpServers: [...servers].map(([name, tokens]) => ({ name, tokens })),
+        },
       });
     }
   }
@@ -576,18 +625,35 @@ export class ClaudeSession {
         if (slash && /isn't available in this environment|in the terminal for details/i.test(resultText)) {
           this.send({ type: 'needs_terminal', command: this.lastPrompt.trim() });
         } else if (/please run \/login|not logged in|invalid api key/i.test(`${resultText} ${JSON.stringify((message as { errors?: unknown }).errors ?? '')}`)) {
-          // Niet (meer) ingelogd: meteen de inlogflow openen in plaats van alleen een foutmelding.
-          this.send({ type: 'needs_terminal', command: '/login' });
+          // Niet (meer) ingelogd: meteen het inlogscherm openen in plaats van alleen een foutmelding.
+          this.send({ type: 'needs_login' });
         }
-        const usage = { input: 0, output: 0, cacheRead: 0, cacheCreation: 0 };
+        const totals = { input: 0, output: 0, cacheRead: 0, cacheCreation: 0 };
         for (const model of Object.values(message.modelUsage ?? {})) {
           if (model.contextWindow && model.contextWindow > (savedContextMax() ?? 0)) {
             void saveContextMax(model.contextWindow);
           }
-          usage.input += model.inputTokens;
-          usage.output += model.outputTokens;
-          usage.cacheRead += model.cacheReadInputTokens;
-          usage.cacheCreation += model.cacheCreationInputTokens;
+          totals.input += model.inputTokens;
+          totals.output += model.outputTokens;
+          totals.cacheRead += model.cacheReadInputTokens;
+          totals.cacheCreation += model.cacheCreationInputTokens;
+        }
+        const previous = this.usageTotals;
+        const keys = Object.keys(totals) as (keyof Usage)[];
+        // Eerste beurt van een hervatte sessie: de totalen bevatten de eerdere beurten al, dus alleen de hoofdloop van deze beurt.
+        const usage: Usage = !previous
+          ? {
+              input: message.usage.input_tokens,
+              output: message.usage.output_tokens,
+              cacheRead: message.usage.cache_read_input_tokens,
+              cacheCreation: message.usage.cache_creation_input_tokens,
+            }
+          : keys.some((k) => totals[k] < previous[k])
+            ? totals
+            : (Object.fromEntries(keys.map((k) => [k, totals[k] - previous[k]])) as Usage);
+        // Een resultaat na een crash kan nullen bevatten; dan blijft het vorige totaal de basis.
+        if (keys.some((k) => totals[k] > 0)) {
+          this.usageTotals = totals;
         }
         this.send({
           type: 'result',

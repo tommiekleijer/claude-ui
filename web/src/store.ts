@@ -2,9 +2,11 @@ import { createContext } from 'react';
 import { create, StoreApi, useStore as useZustandStore } from 'zustand';
 import type {
   Attachment,
+  AuthStatus,
   ChatItem,
   ClientEvent,
   ConfigInfo,
+  ContextInfo,
   Effort,
   Limits,
   ManageInfo,
@@ -24,6 +26,8 @@ import type { SpeechLanguage, SpeechModel } from './speech/dictation';
 export type PermissionRequest = Extract<ServerEvent, { type: 'permission_request' }>;
 export type QuestionRequest = Extract<ServerEvent, { type: 'question' }>;
 export type Dirs = Extract<ServerEvent, { type: 'dirs' }>;
+export type Folder = Extract<ServerEvent, { type: 'folder' }>;
+export type PickerMode = 'open' | 'new' | 'move';
 export type Notice = { id: number; text: string };
 /** resumed: automatisch opnieuw ingepland omdat het werd onderbroken door 'Nu versturen'. */
 export type QueuedMessage = { id: number; text: string; attachments: Attachment[]; resumed?: boolean };
@@ -36,8 +40,9 @@ type AppState = {
   recent: string[];
   sessions: SessionSummary[];
   notices: Notice[];
-  pickerOpen: boolean;
+  picker: PickerMode | null;
   dirs: Dirs | null;
+  folder: Folder | null;
   models: ModelOption[];
   limits: Limits;
   tabIds: number[];
@@ -48,6 +53,10 @@ type AppState = {
   config: ConfigInfo | null;
   usageReport: UsageReport | null;
   usageOpen: boolean;
+  authOpen: boolean;
+  authStatus: AuthStatus | null;
+  /** Lopend of mislukt `claude auth login`; null als er niet wordt ingelogd. */
+  authLogin: { state: 'waiting' | 'failed'; url?: string; error?: string } | null;
   sidebarOpen: boolean;
   opacity: number;
   thema: Thema;
@@ -60,17 +69,23 @@ type AppState = {
   previewOpen: number;
   speechLanguage: SpeechLanguage;
   speechModel: SpeechModel;
+  /** Suggestie voor je volgende bericht van de SDK; kost een extra modelaanroep per beurt. */
+  promptSuggestions: boolean;
+  /** Afwijkende sneltoetsen per actie (zie shortcuts.ts); acties zonder sleutel gebruiken hun standaard. */
+  shortcuts: Record<string, string>;
   /** Status van het zoeken naar een nieuwe versie (alleen in de app). */
   update: UpdateState | null;
   /** Geselecteerde chattekst die als citaat in het invoerveld moet; de Composer neemt hem over en zet dit weer op null. */
   quote: string | null;
-  /** Breedte (px) van de ingeklapte terminal rechts. */
+  /** Breedte (px) van de ingeklapte terminal. */
   dockWidth: number;
+  /** Kant van de ingeklapte terminal; de chat staat aan de andere kant. */
+  dockSide: 'left' | 'right';
   terminalAvailable: boolean;
   /** Open terminals in de app (shells en de echte Claude Code voor interactieve /-commands). */
   terminals: TerminalInfo[];
   activeTerminal: string | null;
-  /** Terminalpaneel ingeklapt naar rechts of groot in beeld. */
+  /** Terminalpaneel ingeklapt naast de chat of groot in beeld. */
   terminalMinimized: boolean;
 };
 
@@ -101,7 +116,7 @@ type TabState = {
   permissions: PermissionRequest[];
   selectedModel: string | null;
   effort: Effort | null;
-  context: { percentage: number; totalTokens: number; maxTokens: number } | null;
+  context: ContextInfo | null;
   queue: QueuedMessage[];
   forceNext: boolean;
   lastSent: Omit<QueuedMessage, 'id'> | null;
@@ -171,8 +186,8 @@ let saveUiTimer: ReturnType<typeof setTimeout> | undefined;
 const saveUi = () => {
   clearTimeout(saveUiTimer);
   saveUiTimer = setTimeout(() => {
-    const { opacity, sidebarOpen, dockWidth, thema, meldingen, accent, speechLanguage, speechModel } = useApp.getState();
-    send({ type: 'save_ui', opacity, sidebarOpen, dockWidth, thema, meldingen, accent, speechLanguage, speechModel });
+    const { opacity, sidebarOpen, dockWidth, dockSide, thema, meldingen, accent, speechLanguage, speechModel, promptSuggestions, shortcuts } = useApp.getState();
+    send({ type: 'save_ui', opacity, sidebarOpen, dockWidth, dockSide, thema, meldingen, accent, speechLanguage, speechModel, promptSuggestions, shortcuts });
   }, 300);
 };
 
@@ -193,6 +208,11 @@ export const setDockWidth = (width: number, save = true) => {
   if (save) {
     saveUi();
   }
+};
+
+export const toggleDockSide = () => {
+  useApp.setState({ dockSide: useApp.getState().dockSide === 'left' ? 'right' : 'left' });
+  saveUi();
 };
 
 export const toggleSidebar = () => {
@@ -242,6 +262,11 @@ export const setSpeech = (settings: { speechLanguage?: SpeechLanguage; speechMod
   saveUi();
 };
 
+export const setShortcuts = (shortcuts: Record<string, string>) => {
+  useApp.setState({ shortcuts });
+  saveUi();
+};
+
 export const trackPreview = (delta: 1 | -1) => useApp.setState((s) => ({ previewOpen: Math.max(0, s.previewOpen + delta) }));
 
 export const openSettings = () => useApp.setState({ settingsOpen: true });
@@ -251,6 +276,15 @@ export const setMeldingen = (meldingen: boolean) => {
   useApp.setState({ meldingen });
   saveUi();
 };
+
+export const setPromptSuggestions = (promptSuggestions: boolean) => {
+  useApp.setState({ promptSuggestions });
+  saveUi();
+};
+
+/** 1234 -> "1,2k" */
+export const formatTokens = (n: number) =>
+  n >= 1000 ? `${(n / 1000).toLocaleString('nl-NL', { maximumFractionDigits: n >= 100_000 ? 0 : 1 })}k` : String(n);
 
 export const setThema = (thema: Thema) => {
   useApp.setState({ thema });
@@ -264,8 +298,9 @@ export const useApp = create<AppState>()(() => ({
   recent: [],
   sessions: [],
   notices: [],
-  pickerOpen: false,
+  picker: null,
   dirs: null,
+  folder: null,
   models: [],
   limits: {},
   tabIds: [],
@@ -276,6 +311,9 @@ export const useApp = create<AppState>()(() => ({
   config: null,
   usageReport: null,
   usageOpen: false,
+  authOpen: false,
+  authStatus: null,
+  authLogin: null,
   sidebarOpen: true,
   opacity: 100,
   thema: 'systeem',
@@ -285,9 +323,12 @@ export const useApp = create<AppState>()(() => ({
   previewOpen: 0,
   speechLanguage: 'nl',
   speechModel: 'base',
+  promptSuggestions: true,
+  shortcuts: {},
   update: null,
   quote: null,
   dockWidth: 460,
+  dockSide: 'right',
   terminalAvailable: false,
   terminals: [],
   activeTerminal: null,
@@ -333,7 +374,7 @@ export const notify = (text: string) =>
   useApp.setState((s) => ({ notices: [...s.notices, { id: ++noticeId, text }] }));
 export const dismissNotice = (id: number) =>
   useApp.setState((s) => ({ notices: s.notices.filter((n) => n.id !== id) }));
-export const setPickerOpen = (pickerOpen: boolean) => useApp.setState({ pickerOpen });
+export const setPicker = (picker: PickerMode | null) => useApp.setState({ picker });
 
 const setTab = (partial: Partial<TabState> | ((s: TabState) => Partial<TabState>)) => activeTab().store.setState(partial);
 
@@ -415,6 +456,18 @@ export const openUsage = () => {
   send({ type: 'usage' });
 };
 export const closeUsage = () => useApp.setState({ usageOpen: false });
+/** Inlogscherm (/login, /logout, /status): haalt de actuele status op via `claude auth status`. */
+export const openAuth = () => {
+  useApp.setState({ authOpen: true });
+  send({ type: 'auth_status' });
+};
+/** Een mislukte login vergeten; een lopende blijft zichtbaar bij opnieuw openen. */
+export const closeAuth = () => useApp.setState((s) => ({ authOpen: false, authLogin: s.authLogin?.state === 'failed' ? null : s.authLogin }));
+export const startLogin = (options: { console: boolean; sso: boolean; email: string }) => send({ type: 'auth_login', ...options });
+export const cancelLogin = () => {
+  send({ type: 'auth_cancel' });
+  useApp.setState({ authLogin: null });
+};
 export const setManageOpen = (manageOpen: boolean) => useApp.setState({ manageOpen });
 export const openManage = (manageSection: 'mcp' | 'commands' | 'agents') => useApp.setState({ manageOpen: true, manageSection });
 export const openConfig = (configOpen: 'memory' | 'permissions' | 'hooks') => {
@@ -431,6 +484,7 @@ export const currentTab = () => activeTab().store.getState();
 /** Zet tekst in het invoerveld van het actieve tabblad (bv. een slash-command). */
 export const insertInComposer = (text: string) => window.dispatchEvent(new CustomEvent('composer-insert', { detail: text }));
 export const focusComposer = () => window.dispatchEvent(new Event('composer-focus'));
+export const focusTerminal = () => window.dispatchEvent(new Event('terminal-focus'));
 
 export const answerQuestion = (id: string, answers: Record<string, string> | null, chat = false) => {
   send({ type: 'question_response', id, answers, chat });
@@ -460,6 +514,15 @@ export const sendToTab = (tabId: number, event: ClientEvent) => {
   if (tab) {
     sendTo(tab, event);
   }
+};
+
+export const renameChat = (tabId: number, title: string) => {
+  const sessionId = tabs.get(tabId)?.store.getState().sessionId;
+  if (!sessionId) {
+    return;
+  }
+  useApp.setState((s) => ({ sessions: s.sessions.map((x) => (x.sessionId === sessionId ? { ...x, title } : x)) }));
+  sendToTab(tabId, { type: 'rename_session', sessionId, title });
 };
 
 /** Na inloggen in de terminal: MCP-servers die op inloggen wachtten opnieuw verbinden. */
@@ -602,12 +665,7 @@ const notifyUser = (tab: Tab, title: string, body: string) => {
 
 native?.onFocusTab((tabId) => activateTab(tabId));
 void native?.updates.state().then((update) => useApp.setState({ update }));
-native?.updates.onState((update) => {
-  useApp.setState({ update });
-  if (update.status === 'available') {
-    notify(`Nieuwe versie ${update.version} beschikbaar: zie Instellingen.`);
-  }
-});
+native?.updates.onState((update) => useApp.setState({ update }));
 
 const applyEvent = (tab: Tab, event: ServerEvent) => {
   const set = tab.store.setState;
@@ -622,7 +680,7 @@ const applyEvent = (tab: Tab, event: ServerEvent) => {
         terminalAvailable: event.terminal,
       });
       if (!restored) {
-        useApp.setState({ opacity: event.ui.opacity, sidebarOpen: event.ui.sidebarOpen, thema: event.ui.thema, meldingen: event.ui.meldingen, accent: event.ui.accent ?? null, speechLanguage: event.ui.speechLanguage ?? 'nl', speechModel: event.ui.speechModel ?? 'base' });
+        useApp.setState({ opacity: event.ui.opacity, sidebarOpen: event.ui.sidebarOpen, dockSide: event.ui.dockSide, thema: event.ui.thema, meldingen: event.ui.meldingen, accent: event.ui.accent ?? null, speechLanguage: event.ui.speechLanguage ?? 'nl', speechModel: event.ui.speechModel ?? 'base', promptSuggestions: event.ui.promptSuggestions ?? true, shortcuts: event.ui.shortcuts });
         applyOpacity(event.ui.opacity);
         applyThema(event.ui.thema);
         applyAccent(event.ui.accent ?? null);
@@ -633,7 +691,7 @@ const applyEvent = (tab: Tab, event: ServerEvent) => {
         restoreTabs(tab, event.tabs);
       }
       if (useApp.getState().activeId === tab.id && !tab.store.getState().cwd) {
-        useApp.setState({ pickerOpen: true });
+        useApp.setState({ picker: 'open' });
       }
       return;
     case 'root':
@@ -648,15 +706,33 @@ const applyEvent = (tab: Tab, event: ServerEvent) => {
     case 'usage_report':
       useApp.setState({ usageReport: event.report });
       return;
+    case 'needs_login':
+      openAuth();
+      return;
+    case 'auth_status':
+      useApp.setState({ authStatus: event.status });
+      return;
+    case 'auth_login':
+      if (event.state === 'done') {
+        useApp.setState({ authLogin: null });
+        sendTo(tab, { type: 'auth_status' });
+        refreshMcpAfterLogin();
+      } else {
+        useApp.setState({ authLogin: { state: event.state, url: event.url, error: event.error } });
+      }
+      return;
     case 'context':
-      set({ context: { percentage: event.percentage, totalTokens: event.totalTokens, maxTokens: event.maxTokens } });
+      set({ context: { percentage: event.percentage, totalTokens: event.totalTokens, maxTokens: event.maxTokens, breakdown: event.breakdown } });
       return;
     case 'dirs':
       useApp.setState({ dirs: event });
       return;
+    case 'folder':
+      useApp.setState({ folder: event });
+      return;
     case 'project':
       set({ ...resetConversation, cwd: event.cwd });
-      useApp.setState({ recent: event.recent, pickerOpen: false });
+      useApp.setState({ recent: event.recent, picker: null });
       return;
     case 'sessions':
       useApp.setState({ sessions: event.sessions });
@@ -708,18 +784,22 @@ const applyEvent = (tab: Tab, event: ServerEvent) => {
     case 'permission_cancelled':
       set((s) => ({ permissions: s.permissions.filter((p) => p.id !== event.id) }));
       return;
-    case 'result':
+    case 'result': {
+      const { input, output, cacheRead, cacheCreation } = event.usage;
+      const tokens = input + output + cacheRead + cacheCreation > 0
+        ? `${formatTokens(input)} in · ${formatTokens(output)} uit · ${formatTokens(cacheRead)} uit cache · ${formatTokens(cacheCreation)} naar cache`
+        : '';
+      const marker = [event.isError ? event.errorText || 'Taak gestopt' : '', tokens].filter(Boolean).join(' · ');
       set((s) => ({
         costUsd: event.costUsd,
         usage: event.usage,
         items: [
           ...s.items.map((i) => (i.kind === 'assistant' && i.streaming ? { ...i, streaming: false } : i)),
-          ...(event.isError
-            ? [{ kind: 'marker' as const, id: `marker-${Date.now()}`, text: event.errorText || 'Taak gestopt' }]
-            : []),
+          ...(marker ? [{ kind: 'marker' as const, id: `marker-${Date.now()}`, text: marker }] : []),
         ],
       }));
       return;
+    }
     case 'running':
       if (event.running === false && tab.store.getState().running) {
         notifyUser(tab, 'Claude is klaar', tabLabel(tab));
@@ -810,6 +890,7 @@ const applyEvent = (tab: Tab, event: ServerEvent) => {
     case 'pty_started':
       ptyListeners.get(event.id)?.(event);
       return;
+    case 'notice':
     case 'error':
       notify(event.message);
       return;
@@ -851,7 +932,7 @@ export const openTab = (init: { cwd?: string; sessionId?: string | null } = {}, 
   useApp.setState((s) => ({
     tabIds: [...s.tabIds, tab.id],
     activeId: activate ? tab.id : s.activeId,
-    pickerOpen: activate && !init.cwd ? true : s.pickerOpen,
+    picker: activate && !init.cwd ? 'open' : s.picker,
   }));
   connect(tab);
   return tab;
@@ -872,14 +953,21 @@ export const moveTab = (id: number, targetId: number, after: boolean) => {
 export const activateTab = (id: number) => {
   if (tabs.has(id)) {
     tabs.get(id)?.store.setState({ unread: false });
-    useApp.setState({ activeId: id, pickerOpen: !tabs.get(id)?.store.getState().cwd });
+    useApp.setState({ activeId: id, picker: tabs.get(id)?.store.getState().cwd ? null : 'open' });
   }
 };
+
+/** Gesloten tabbladen met een gesprek, meest recent achteraan, met hun plek in de tabbalk. */
+const closedTabs: { cwd: string; sessionId: string; index: number }[] = [];
 
 export const closeTab = (id: number) => {
   const tab = tabs.get(id);
   if (!tab) {
     return;
+  }
+  const { cwd, sessionId, items } = tab.store.getState();
+  if (cwd && sessionId && items.length > 0) {
+    closedTabs.push({ cwd, sessionId, index: useApp.getState().tabIds.indexOf(id) });
   }
   tab.closed = true;
   tab.socket?.close();
@@ -899,6 +987,28 @@ export const closeTab = (id: number) => {
   scheduleSave();
 };
 
+export const reopenClosedTab = () => {
+  const closed = closedTabs.pop();
+  if (!closed) {
+    return;
+  }
+  const open = [...tabs.values()].find((t) => t.store.getState().sessionId === closed.sessionId);
+  if (open) {
+    activateTab(open.id);
+    return;
+  }
+  const active = activeTab();
+  if (isEmpty(active) && !active.store.getState().sessionId && !active.store.getState().running) {
+    sendTo(active, { type: 'resume_session', sessionId: closed.sessionId, cwd: closed.cwd });
+    return;
+  }
+  const target = useApp.getState().tabIds[closed.index];
+  const tab = openTab({ cwd: closed.cwd, sessionId: closed.sessionId });
+  if (target !== undefined) {
+    moveTab(tab.id, target, false);
+  }
+};
+
 const isEmpty = (tab: Tab) => tab.store.getState().items.length === 0;
 
 /** Opent een project: in het actieve tabblad als dat leeg is, anders in een nieuw tabblad. */
@@ -909,7 +1019,27 @@ export const openProject = (cwd: string) => {
   } else {
     openTab({ cwd });
   }
-  useApp.setState({ pickerOpen: false });
+  useApp.setState({ picker: null });
+};
+
+const moveChat = (cwd: string) => {
+  const tab = activeTab();
+  const { sessionId, running } = tab.store.getState();
+  if (running && !window.confirm('Claude is nog bezig in dit tabblad. Toch verplaatsen?')) {
+    return;
+  }
+  sendTo(tab, sessionId ? { type: 'move_session', sessionId, cwd } : { type: 'open_project', cwd });
+};
+
+export const chooseFolder = (mode: PickerMode, cwd: string) => {
+  useApp.setState({ picker: null });
+  if (mode === 'open') {
+    openProject(cwd);
+  } else if (mode === 'new') {
+    openTab({ cwd });
+  } else {
+    moveChat(cwd);
+  }
 };
 
 /** Opent een sessie: springt naar het tabblad als hij al open is, anders zoals bij openProject. */
@@ -952,7 +1082,7 @@ const restoreTabs = (first: Tab, saved: SavedTabs) => {
   }
   const created = others.map((t) => openTab({ cwd: t.cwd, sessionId: t.sessionId }, false));
   const all = [first, ...created];
-  useApp.setState({ activeId: (all[saved.active] ?? first).id, pickerOpen: false });
+  useApp.setState({ activeId: (all[saved.active] ?? first).id, picker: null });
 };
 
 let saveTimer: ReturnType<typeof setTimeout> | undefined;

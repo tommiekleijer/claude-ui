@@ -124,6 +124,10 @@
         {
           "from": "build/linux-backend",
           "to": "linux-backend"
+        },
+        {
+          "from": "build/linux-backend/node_modules",
+          "to": "linux-backend/node_modules"
         }
       ]
     },

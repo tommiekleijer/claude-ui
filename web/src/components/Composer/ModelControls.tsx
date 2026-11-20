@@ -1,7 +1,8 @@
 import { Cpu, Gauge } from 'lucide-react';
 import { useEffect } from 'react';
 import type { Effort } from '../../../../shared/protocol';
-import { isTerminalKey, send, useStore } from '../../store';
+import { matchesShortcut, useShortcut } from '../../shortcuts';
+import { send, useStore } from '../../store';
 import Select from '../ui/Select';
 
 const EFFORT_LABELS: Record<Effort, string> = {
@@ -29,21 +30,22 @@ const ModelControls = () => {
   const modelLabel = selected?.label ?? (activeModel ? prettyModel(activeModel) : 'Standaard model');
   const efforts = (selected ?? models.find((m) => m.value === 'default'))?.efforts ?? [];
 
-  // Ctrl+↑/↓ (op de Mac ook Cmd): effort hoger of lager, in de volgorde van de lijst.
+  const effortUpKey = useShortcut('effortUp');
+  const effortDownKey = useShortcut('effortDown');
+
+  // Effort hoger of lager, in de volgorde van de lijst.
   useEffect(() => {
     if (efforts.length === 0) {
       return undefined;
     }
     const handleKey = (event: KeyboardEvent) => {
-      if ((!event.ctrlKey && !event.metaKey) || event.shiftKey || event.altKey || isTerminalKey(event)) {
-        return;
-      }
-      if (event.key !== 'ArrowUp' && event.key !== 'ArrowDown') {
+      const up = matchesShortcut(event, 'effortUp');
+      if (!up && !matchesShortcut(event, 'effortDown')) {
         return;
       }
       event.preventDefault();
       const current = effort ? efforts.indexOf(effort) : efforts.indexOf('medium');
-      const next = Math.min(Math.max((current === -1 ? 0 : current) + (event.key === 'ArrowUp' ? 1 : -1), 0), efforts.length - 1);
+      const next = Math.min(Math.max((current === -1 ? 0 : current) + (up ? 1 : -1), 0), efforts.length - 1);
       if (efforts[next] !== effort) {
         send({ type: 'set_effort', effort: efforts[next] });
       }
@@ -68,7 +70,7 @@ const ModelControls = () => {
       />
       {efforts.length > 0 && (
         <Select
-          title="Effort (Ctrl+↑/↓)"
+          title={`Effort (${effortUpKey} / ${effortDownKey})`}
           label={
             <>
               <Gauge size={13} />

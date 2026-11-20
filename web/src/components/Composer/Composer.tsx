@@ -103,7 +103,7 @@ const Composer = () => {
   const blocked = useApp((s) => s.previewOpen > 0);
   const canSend = Boolean(cwd) && !blocked && connected && (text.trim().length > 0 || attachments.length > 0);
   const activeId = useApp((s) => s.activeId);
-  const pickerOpen = useApp((s) => s.pickerOpen);
+  const pickerOpen = useApp((s) => s.picker !== null);
   const manageOpen = useApp((s) => s.manageOpen);
   const hasPermission = useStore((s) => s.permissions.length > 0);
   const commands = useStore((s) => s.manage?.commands);

@@ -1,0 +1,22 @@
+@use '../../stijl';
+
+.melding {
+  @include stijl.klein;
+  display: flex;
+  align-items: center;
+  gap: var(--ruimte-2);
+  margin: var(--ruimte-3) var(--ruimte-5) 0;
+  padding: var(--ruimte-1) var(--ruimte-1) var(--ruimte-1) var(--ruimte-3);
+  border-radius: var(--vorm-md);
+  background: var(--accent-zacht);
+  color: var(--tekst-hoofd);
+
+  > svg {
+    flex: 0 0 auto;
+    color: var(--accent-standaard);
+  }
+
+  > span {
+    flex: 1 1 auto;
+  }
+}

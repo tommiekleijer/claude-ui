@@ -1,8 +1,9 @@
-import { spawn } from 'node:child_process';
+import { ChildProcessWithoutNullStreams, execFile, spawn } from 'node:child_process';
 import { existsSync } from 'node:fs';
 import path from 'node:path';
 import { createRequire } from 'node:module';
-import type { ServerEvent } from '../shared/protocol.js';
+import { promisify } from 'node:util';
+import type { AuthStatus, ServerEvent } from '../shared/protocol.js';
 
 type Pty = {
   onData: (cb: (data: string) => void) => void;
@@ -39,6 +40,9 @@ const bundledClaude = () => {
 };
 const claudeBin = bundledClaude();
 const quote = (arg: string) => `'${arg.replace(/'/g, `'\\''`)}'`;
+const claudeCommand = claudeBin ? `"$(command -v claude || echo ${quote(claudeBin)})"` : 'claude';
+/** Shell-argumenten die Claude Code via de login-shell starten: `claude` uit je PATH, anders de meegeleverde. */
+const claudeShellArgs = (args: string[]) => ['-lic', `exec ${claudeCommand} ${args.map(quote).join(' ')}`];
 
 /** Terminals per verbinding (tabblad); ze stoppen als de verbinding sluit. */
 export class Terminals {
@@ -57,8 +61,7 @@ export class Terminals {
     }
     const isShell = shellCommand !== undefined;
     const title = isShell ? shellCommand : ['claude', ...(args ?? [])].join(' ');
-    const claudeCommand = claudeBin ? `"$(command -v claude || echo ${quote(claudeBin)})"` : 'claude';
-    const spawnArgs = isShell ? ['-li'] : ['-lic', `exec ${claudeCommand} ${(args ?? []).map(quote).join(' ')}`];
+    const spawnArgs = isShell ? ['-li'] : claudeShellArgs(args ?? []);
     const term = pty.spawn(shell, spawnArgs, {
       name: 'xterm-256color',
       cols,
@@ -122,3 +125,79 @@ export const runShell = (cwd: string, command: string) =>
       resolve({ output: trimmed.trimEnd(), exitCode: code ?? 1 });
     });
   });
+
+const execFileAsync = promisify(execFile);
+
+/** Niet ingelogd geeft exitcode 1, met de JSON gewoon op stdout; uitvoer van de shell-rc vóór de JSON telt niet mee. */
+export const authStatus = async (): Promise<AuthStatus> => {
+  const { stdout, stderr } = await execFileAsync(shell, claudeShellArgs(['auth', 'status', '--json'])).catch(
+    (error: { stdout?: string; stderr?: string; message: string }) => ({ stdout: error.stdout ?? '', stderr: error.stderr || error.message }),
+  );
+  try {
+    return JSON.parse(stdout.slice(stdout.indexOf('{'))) as AuthStatus;
+  } catch {
+    return { loggedIn: false, authMethod: 'none', error: (stderr || stdout).trim() || 'Geen uitvoer van claude auth status.' };
+  }
+};
+
+export const authLogout = () => execFileAsync(shell, claudeShellArgs(['auth', 'logout']));
+
+// Eén inlogproces tegelijk (inloggen geldt voor de hele machine); `send` is de verbinding die het startte.
+let login: { child: ChildProcessWithoutNullStreams; send: (event: ServerEvent) => void } | null = null;
+
+/**
+ * `claude auth login` opent zelf de browser en wacht op de terugkoppeling via localhost. Daarnaast print hij een
+ * inloglink die op een pagina met een code uitkomt; die code leest hij van stdin ("Paste code here if prompted").
+ */
+export const startLogin = (send: (event: ServerEvent) => void, options: { console: boolean; sso: boolean; email: string }) => {
+  cancelLogin();
+  const args = ['auth', 'login', options.console ? '--console' : '--claudeai', ...(options.sso ? ['--sso'] : []), ...(options.email ? [`--email=${options.email}`] : [])];
+  const child = spawn(shell, claudeShellArgs(args), { env: process.env });
+  const current = { child, send };
+  login = current;
+  send({ type: 'auth_login', state: 'waiting' });
+  let output = '';
+  let url: string | undefined;
+  const append = (chunk: Buffer) => {
+    output += chunk.toString();
+    const found = output.match(/visit:\s*(\S+)\r?\n/)?.[1];
+    if (found && !url) {
+      url = found;
+      send({ type: 'auth_login', state: 'waiting', url });
+    }
+  };
+  child.stdout.on('data', append);
+  child.stderr.on('data', append);
+  // Een code plakken nadat het proces al stopte geeft EPIPE; de afloop meldt 'close' al.
+  child.stdin.on('error', () => undefined);
+  child.on('error', (error) => {
+    if (login !== current) {
+      return;
+    }
+    login = null;
+    send({ type: 'auth_login', state: 'failed', error: error.message });
+  });
+  child.on('close', (code) => {
+    if (login !== current) {
+      return;
+    }
+    login = null;
+    const error = output
+      .split('\n')
+      .filter((line) => line.trim() && !line.includes('visit:') && !line.startsWith('Paste code') && !line.startsWith('Opening browser'))
+      .join('\n')
+      .trim();
+    send(code === 0 ? { type: 'auth_login', state: 'done' } : { type: 'auth_login', state: 'failed', error: error || `Inloggen mislukt (code ${code}).` });
+  });
+};
+
+export const sendLoginCode = (code: string) => login?.child.stdin.write(`${code}\n`);
+
+/** Stopt het inloggen; met `send` alleen als die verbinding het startte. */
+export const cancelLogin = (send?: (event: ServerEvent) => void) => {
+  if (login && (!send || login.send === send)) {
+    const { child } = login;
+    login = null;
+    child.kill();
+  }
+};

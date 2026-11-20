@@ -128,7 +128,7 @@
   visibility: hidden;
 }
 
-/* Ingeklapt: paneel rechts naast de chat (App maakt ruimte via .withDock). */
+/* Ingeklapt: paneel rechts of links naast de chat (App maakt ruimte via .withDock of .withDockLeft). */
 .dock {
   /* Binnen .body in App: precies het gebied tussen tabbalk en statusbalk. */
   position: absolute;
@@ -149,6 +149,18 @@
   }
 }
 
+.dockLeft {
+  position: relative;
+  flex: 0 0 var(--dock-width);
+  border-right: 1px solid var(--hoogte-1-rand);
+  border-left: 0;
+
+  .resizer {
+    right: -3px;
+    left: auto;
+  }
+}
+
 .resizer {
   position: absolute;
   top: 0;
@@ -162,5 +174,41 @@
   &:hover,
   &:active {
     background: var(--accent-standaard);
+  }
+}
+
+/* Contextmenu (rechtermuisknop) in de terminal; positie zet TerminalView, binnen .views. */
+.menu {
+  @include stijl.popover;
+  position: absolute;
+  z-index: 2;
+  min-width: 180px;
+  margin: 0;
+  padding: var(--ruimte-1);
+  list-style: none;
+}
+
+.menuItem {
+  @include stijl.klein;
+  display: flex;
+  align-items: center;
+  gap: var(--ruimte-2);
+  width: 100%;
+  min-height: 34px;
+  padding: 0 var(--ruimte-3) 0 var(--ruimte-2);
+  border: 0;
+  border-radius: var(--vorm-sm);
+  background: transparent;
+  color: var(--tekst-hoofd);
+  text-align: left;
+  cursor: pointer;
+
+  &:hover:not(:disabled) {
+    background: var(--accent-zacht);
+  }
+
+  &:disabled {
+    color: var(--tekst-vaag);
+    cursor: default;
   }
 }

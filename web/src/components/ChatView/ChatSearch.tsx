@@ -1,6 +1,7 @@
 import { ChevronDown, ChevronUp, Search, X } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
-import { isTerminalKey, useApp, useStore } from '../../store';
+import { matchesShortcut } from '../../shortcuts';
+import { useApp, useStore } from '../../store';
 import styles from './ChatView.module.scss';
 
 const activeScroller = () => document.querySelector<HTMLElement>('[aria-live][aria-hidden="false"]');
@@ -27,7 +28,7 @@ const findRanges = (root: HTMLElement, query: string) => {
   return ranges;
 };
 
-/** Ctrl+F: zoeken in de chat van het actieve tabblad, met markeringen (CSS Highlight API, zonder de DOM te wijzigen). */
+/** Zoeken in de chat van het actieve tabblad, met markeringen (CSS Highlight API, zonder de DOM te wijzigen). */
 const ChatSearch = () => {
   const [open, setOpen] = useState(false);
   const [query, setQuery] = useState('');
@@ -39,7 +40,7 @@ const ChatSearch = () => {
 
   useEffect(() => {
     const handleKey = (event: KeyboardEvent) => {
-      if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === 'f' && !isTerminalKey(event)) {
+      if (matchesShortcut(event, 'search')) {
         event.preventDefault();
         setOpen(true);
         requestAnimationFrame(() => inputRef.current?.select());

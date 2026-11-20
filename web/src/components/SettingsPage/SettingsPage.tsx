@@ -2,11 +2,13 @@ import { Droplet } from 'lucide-react';
 import type { CSSProperties } from 'react';
 import { useEffect, useState } from 'react';
 import { native } from '../../native';
+import { assignShortcut, comboFromEvent, formatCombo, shortcutCombo, ShortcutId, SHORTCUTS } from '../../shortcuts';
 import { MODELS, SpeechLanguage, SpeechModel } from '../../speech/dictation';
-import { closeSettings, setAccent, setMeldingen, setOpacity, setSpeech, setThema, useApp } from '../../store';
+import { closeSettings, setAccent, setMeldingen, setOpacity, setPromptSuggestions, setSpeech, setThema, useApp } from '../../store';
 import type { Thema } from '../../../../shared/protocol';
 import { Knop, Schakelaar, Segmentbalk } from '../../vertex';
 import Dialog from '../ui/Dialog';
+import { UpdateActies, updateTekst } from '../UpdateMelding/UpdateMelding';
 import styles from './SettingsPage.module.scss';
 
 const STANDAARD_ACCENT = '#6a55dc';
@@ -20,11 +22,12 @@ const KLEUREN = [
   { naam: 'Rood', hex: '#d64545' },
 ];
 
-const Row = ({ label, hint, children }: { label: string; hint?: string; children: React.ReactNode }) => (
+export const Row = ({ label, hint, fout, children }: { label: string; hint?: string; fout?: string; children: React.ReactNode }) => (
   <div className={styles.row}>
     <div className={styles.rowText}>
       <span className={styles.label}>{label}</span>
       {hint && <span className={styles.hint}>{hint}</span>}
+      {fout && <span className={styles.fout}>{fout}</span>}
     </div>
     <div className={styles.control}>{children}</div>
   </div>
@@ -39,43 +42,72 @@ const Updates = () => {
   if (!native || !update) {
     return null;
   }
-  const mac = native.platform === 'darwin';
-  const status =
-    update.status === 'available'
-      ? `Versie ${update.version} is beschikbaar.`
-      : update.status === 'downloading'
-        ? `Downloaden… ${update.percent}%`
-        : update.status === 'ready'
-          ? 'De update is klaar om te installeren.'
-          : update.status === 'checking'
-            ? 'Zoeken naar updates…'
-            : update.status === 'none'
-              ? 'Je hebt de nieuwste versie.'
-              : update.status === 'error'
-                ? `Updaten mislukt: ${update.message}`
-                : update.status === 'dev'
-                  ? 'Updates werken alleen in de geïnstalleerde app.'
-                  : '';
   return (
     <section className={styles.section}>
       <h3 className={styles.heading}>Updates</h3>
-      <Row label={`Claude UI ${version}`} hint={status}>
-        {update.status === 'available' && (
-          <Knop variant="primair" maat="s" onClick={() => void native?.updates.install()}>
-            {mac ? 'Downloaden' : 'Installeren'}
-          </Knop>
-        )}
-        {update.status === 'ready' && (
-          <Knop variant="primair" maat="s" onClick={() => void native?.updates.restart()}>
-            Herstarten en installeren
-          </Knop>
-        )}
-        {(update.status === 'idle' || update.status === 'none' || update.status === 'error') && (
-          <Knop variant="secundair" maat="s" onClick={() => void native?.updates.check()}>
-            Controleren
-          </Knop>
-        )}
+      <Row label={`Claude UI ${version}`} hint={updateTekst(update)}>
+        <UpdateActies update={update} />
       </Row>
+    </section>
+  );
+};
+
+const Sneltoetsen = () => {
+  const shortcuts = useApp((s) => s.shortcuts);
+  const [recording, setRecording] = useState<ShortcutId | null>(null);
+  const [fout, setFout] = useState<{ id: ShortcutId; tekst: string } | null>(null);
+
+  const assign = (id: ShortcutId, combo: string | null) => {
+    const melding = assignShortcut(id, combo);
+    setFout(melding ? { id, tekst: melding } : null);
+  };
+
+  useEffect(() => {
+    if (!recording) {
+      return undefined;
+    }
+    // In de capture-fase en gestopt, zodat de toets niet ook zijn huidige actie uitvoert of het venster sluit.
+    const handleKey = (event: KeyboardEvent) => {
+      event.preventDefault();
+      event.stopImmediatePropagation();
+      const combo = comboFromEvent(event);
+      if (event.key === 'Escape') {
+        setRecording(null);
+      } else if (combo) {
+        assign(recording, combo);
+        setRecording(null);
+      }
+    };
+    window.addEventListener('keydown', handleKey, true);
+    return () => window.removeEventListener('keydown', handleKey, true);
+  }, [recording]);
+
+  return (
+    <section className={styles.section}>
+      <h3 className={styles.heading}>Sneltoetsen</h3>
+      {SHORTCUTS.map((shortcut) => (
+        <Row
+          key={shortcut.id}
+          label={shortcut.label}
+          hint={recording === shortcut.id ? 'Druk de nieuwe combinatie in; Esc annuleert.' : undefined}
+          fout={fout?.id === shortcut.id ? fout.tekst : undefined}
+        >
+          <kbd className={styles.toets}>{formatCombo(shortcutCombo(shortcut.id, shortcuts))}</kbd>
+          <Knop
+            variant="secundair"
+            maat="s"
+            onClick={() => {
+              setFout(null);
+              setRecording(shortcut.id);
+            }}
+          >
+            {recording === shortcut.id ? 'Opnemen…' : 'Wijzigen'}
+          </Knop>
+          <Knop variant="tertiair" maat="s" disabled={!shortcuts[shortcut.id]} onClick={() => assign(shortcut.id, null)}>
+            Standaard
+          </Knop>
+        </Row>
+      ))}
     </section>
   );
 };
@@ -87,6 +119,7 @@ const SettingsPage = () => {
   const accent = useApp((s) => s.accent);
   const speechLanguage = useApp((s) => s.speechLanguage);
   const speechModel = useApp((s) => s.speechModel);
+  const promptSuggestions = useApp((s) => s.promptSuggestions);
   const huidig = (accent ?? STANDAARD_ACCENT).toLowerCase();
   const eigen = !KLEUREN.some((kleur) => kleur.hex === huidig);
 
@@ -175,6 +208,16 @@ const SettingsPage = () => {
           />
         </Row>
       </section>
+      <section className={styles.section}>
+        <h3 className={styles.heading}>Claude</h3>
+        <Row label="Suggesties voor je volgende bericht" hint="Na elk antwoord een voorstel in het lege invoerveld (Tab neemt het over). Kost per beurt een extra modelaanroep (grotendeels uit de cache). Geldt vanaf de volgende chat.">
+          <Schakelaar
+            aria-label="Suggesties voor je volgende bericht"
+            aan={promptSuggestions}
+            onChange={(event) => setPromptSuggestions(event.target.checked)}
+          />
+        </Row>
+      </section>
       {native && (
         <section className={styles.section}>
           <h3 className={styles.heading}>Meldingen</h3>
@@ -183,6 +226,7 @@ const SettingsPage = () => {
           </Row>
         </section>
       )}
+      <Sneltoetsen />
       <Updates />
     </Dialog>
   );

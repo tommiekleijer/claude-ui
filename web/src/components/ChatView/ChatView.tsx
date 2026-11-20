@@ -190,7 +190,7 @@ export const ChatArea = () => {
 
   useEffect(() => {
     if (!mounted.includes(activeId)) {
-      startTransition(() => setMounted((m) => [...m, activeId]));
+      startTransition(() => setMounted((m) => (m.includes(activeId) ? m : [...m, activeId])));
     }
   }, [activeId, mounted]);
 

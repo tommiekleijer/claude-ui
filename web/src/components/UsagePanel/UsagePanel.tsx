@@ -1,5 +1,6 @@
 import { Gauge, RefreshCw } from 'lucide-react';
-import { closeUsage, send, useApp } from '../../store';
+import type { TokenCount } from '../../../../shared/protocol';
+import { closeUsage, formatTokens, send, useApp, useStore } from '../../store';
 import Dialog from '../ui/Dialog';
 import { Icoonknop } from '../../vertex';
 import styles from './UsagePanel.module.scss';
@@ -18,6 +19,46 @@ const timeLeft = (resetsAt?: number) => {
   const h = Math.floor((secs % 86400) / 3600);
   const m = Math.floor((secs % 3600) / 60);
   return d > 0 ? `nog ${d}d ${h}u` : h > 0 ? `nog ${h}u ${m}m` : `nog ${m}m`;
+};
+
+const TokenList = ({ title, items, max }: { title: string; items: TokenCount[]; max: number }) =>
+  items.length === 0 ? null : (
+    <section className={styles.section}>
+      <h4 className={styles.sectionTitle}>{title}</h4>
+      <ul className={styles.contributors}>
+        {[...items]
+          .sort((a, b) => b.tokens - a.tokens)
+          .map((item) => (
+            <li key={item.name}>
+              <span className={styles.contribPct}>{formatTokens(item.tokens)}</span>
+              <span className={styles.contribBar}>
+                <span style={{ width: `${Math.min(100, (item.tokens / max) * 100)}%` }} />
+              </span>
+              <span className={styles.contribText}>{item.name}</span>
+            </li>
+          ))}
+      </ul>
+    </section>
+  );
+
+/** Wat skills, MCP-servers, CLAUDE.md en dergelijke in deze chat standaard in de context zetten, los van het gesprek. */
+const ContextCosts = () => {
+  const context = useStore((s) => s.context);
+  const breakdown = context?.breakdown;
+  return (
+    <>
+      <h3 className={`${styles.heading} ${styles.contextHeading}`}>Vaste contextkosten van deze chat</h3>
+      {!context || !breakdown ? (
+        <p className={styles.empty}>Zichtbaar na de eerste beurt in deze chat.</p>
+      ) : (
+        <>
+          <TokenList title="Per onderdeel" items={breakdown.categories} max={context.maxTokens} />
+          <TokenList title="MCP-servers (geladen tools)" items={breakdown.mcpServers} max={context.maxTokens} />
+          <TokenList title="CLAUDE.md en geheugen" items={breakdown.memoryFiles} max={context.maxTokens} />
+        </>
+      )}
+    </>
+  );
 };
 
 const UsagePanel = () => {
@@ -95,6 +136,7 @@ const UsagePanel = () => {
           )}
         </>
       )}
+      <ContextCosts />
     </Dialog>
   );
 };

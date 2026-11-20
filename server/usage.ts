@@ -1,6 +1,5 @@
-import { query } from '@anthropic-ai/claude-agent-sdk';
-import { homedir } from 'node:os';
 import type { Limits, UsageReport } from '../shared/protocol.js';
+import { helperQuery } from './projects.js';
 
 const MONTHS = ['jan', 'feb', 'mar', 'apr', 'may', 'jun', 'jul', 'aug', 'sep', 'oct', 'nov', 'dec'];
 
@@ -73,21 +72,12 @@ export const parseUsage = (text: string): UsageReport => {
 };
 
 export const fetchUsage = async (): Promise<UsageReport | null> => {
-  // persistSession: false, anders komt elke aanroep als losse sessie in ~/.claude/projects.
-  const q = query({
-    prompt: '/usage',
-    options: { cwd: homedir(), env: { ...process.env }, settingSources: ['user'], persistSession: false },
-  });
-  try {
-    for await (const message of q) {
-      if (message.type === 'result' && message.subtype === 'success') {
-        return parseUsage(message.result);
-      }
-    }
-  } finally {
-    q.close();
-  }
-  return null;
+  const helper = helperQuery();
+  const usage = helper.ask('/usage');
+  // Direct erachter in de wachtrij: anders groeit de context per check door tot auto-compact, en dat kost wel tokens.
+  void helper.ask('/clear').catch(() => undefined);
+  const result = await usage;
+  return result.subtype === 'success' ? parseUsage(result.result) : null;
 };
 
 /** Zet de 5-uurs- en weeklimiet uit het overzicht om naar de statusbalk-limieten. */
