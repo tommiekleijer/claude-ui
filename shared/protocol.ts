@@ -192,5 +192,5 @@ export type ClientEvent =
   | { type: 'auth_logout' }
   | { type: 'subagent'; toolUseId: string }
   | { type: 'mcp_toggle'; name: string; enabled: boolean }
-  | { type: 'mcp_reconnect'; name: string }
+  | { type: 'mcp_reconnect'; name: string; quiet?: boolean }
   | { type: 'permission_response'; id: string; decision: PermissionDecision };
