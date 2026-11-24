@@ -529,7 +529,7 @@ export const renameChat = (tabId: number, title: string) => {
 export const refreshMcpAfterLogin = () => {
   for (const server of activeTab().store.getState().manage?.mcp ?? []) {
     if (server.status === 'needs-auth' || server.status === 'failed') {
-      send({ type: 'mcp_reconnect', name: server.name });
+      send({ type: 'mcp_reconnect', name: server.name, quiet: true });
     }
   }
   send({ type: 'manage' });

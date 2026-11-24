@@ -234,7 +234,15 @@ const handleConnection = async (ws: WebSocket) => {
         send({ type: 'manage', ...(await (session as ClaudeSession).manage()) });
         return;
       case 'mcp_reconnect':
-        await ensureSession()?.reconnectMcp(event.name);
+        // Na een login worden alle wachtende servers tegelijk opnieuw verbonden; een mislukte poging
+        // staat dan al als status in het beheerpaneel en hoeft geen losse melding te geven.
+        await ensureSession()
+          ?.reconnectMcp(event.name)
+          .catch((error: unknown) => {
+            if (!event.quiet) {
+              throw error;
+            }
+          });
         send({ type: 'manage', ...(await (session as ClaudeSession).manage()) });
         return;
       case 'subagent': {
