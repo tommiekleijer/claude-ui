@@ -21,6 +21,7 @@ const PermissionPopup = () => {
 
   return (
     <Dialog
+      scoped
       title={
         <>
           <ShieldQuestion size={20} className={styles.icon} />

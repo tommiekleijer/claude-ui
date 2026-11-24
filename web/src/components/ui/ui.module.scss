@@ -12,6 +12,16 @@
   backdrop-filter: blur(12px) saturate(140%);
 }
 
+/* Alleen over het chatvlak, zodat tabbalk en zijbalk bruikbaar blijven terwijl Claude op antwoord wacht. */
+.scoped {
+  position: absolute;
+
+  .dialog {
+    width: min(600px, calc(100% - 32px));
+    max-height: calc(100% - 10vh - 16px);
+  }
+}
+
 .dialog {
   display: flex;
   flex-direction: column;

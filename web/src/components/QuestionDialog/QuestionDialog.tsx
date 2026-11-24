@@ -64,6 +64,7 @@ const QuestionDialog = () => {
 
   return (
     <Dialog
+      scoped
       title={
         <>
           <MessageCircleQuestion size={20} className={styles.icon} />

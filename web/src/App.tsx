@@ -53,6 +53,8 @@ const App = () => {
           <ChatArea />
           <TasksPanel />
           <Composer />
+          {hasPermission && <PermissionPopup />}
+          <QuestionDialog />
         </main>
         <TerminalDialog />
       </div>
@@ -64,8 +66,6 @@ const App = () => {
       {authOpen && <AuthPanel />}
       {settingsOpen && <SettingsPage />}
       <SubagentDialog />
-      {hasPermission && <PermissionPopup />}
-      <QuestionDialog />
       <Notices />
     </div>
   );
