@@ -19,7 +19,7 @@ const SessionSidebar = () => {
   const [search, setSearch] = useState('');
   const [scope, setScope] = useState<'project' | 'all'>('project');
   const currentRepo = cwd ? (root && cwd.startsWith(`${root}/`) ? cwd.slice(root.length + 1) : (cwd.split('/').pop() ?? cwd)) : null;
-  const inProject = (dir: string) => !!cwd && (dir === cwd || dir.startsWith(`${cwd}/`) || cwd.startsWith(`${dir}/`));
+  const inProject = (dir: string) => dir === cwd;
   const showAll = scope === 'all' || !currentRepo;
 
   const term = search.trim().toLowerCase();
