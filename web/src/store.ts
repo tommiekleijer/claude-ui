@@ -133,6 +133,10 @@ type TabState = {
   terminalHint: string | null;
   /** Voorspeld volgend bericht van de SDK; grijs in het lege invoerveld, Tab neemt hem over. */
   promptSuggestion: string | null;
+  /** Tijdstip van de laatste keer stoppen; het poppetje ontploft dan. */
+  gestopt: number;
+  /** De tool waarvan Claude nu de input schrijft (bv. de inhoud van een Write); het poppetje doet dat al voor. */
+  voorbereiding: string | null;
 };
 
 type State = AppState & TabState;
@@ -146,6 +150,8 @@ const emptyTab = (): TabState => ({
   sessionId: null,
   items: [],
   running: false,
+  gestopt: 0,
+  voorbereiding: null,
   model: null,
   permissionMode: null,
   costUsd: null,
@@ -368,6 +374,11 @@ const sendTo = (tab: Tab, event: ClientEvent) => {
 };
 
 export const send = (event: ClientEvent) => sendTo(activeTab(), event);
+
+export const stop = () => {
+  send({ type: 'interrupt' });
+  setTab({ gestopt: Date.now() });
+};
 
 let noticeId = 0;
 export const notify = (text: string) =>
@@ -765,9 +776,12 @@ const applyEvent = (tab: Tab, event: ServerEvent) => {
         items: updateItem(s.items, event.id, (i) => (i.kind === 'assistant' ? { ...i, streaming: false } : i)),
       }));
       return;
+    case 'tool_preparing':
+      set({ voorbereiding: event.name });
+      return;
     case 'tool_start': {
       const tool: ToolItem = { kind: 'tool', id: event.id, name: event.name, input: event.input, done: false };
-      set((s) => ({ items: [...s.items.filter((i) => i.id !== event.id), tool] }));
+      set((s) => ({ voorbereiding: null, items: [...s.items.filter((i) => i.id !== event.id), tool] }));
       return;
     }
     case 'tool_end':
@@ -807,6 +821,7 @@ const applyEvent = (tab: Tab, event: ServerEvent) => {
       set((s) => ({
         unread: s.unread || (s.running && !event.running && useApp.getState().activeId !== tab.id),
         running: event.running,
+        voorbereiding: event.running ? s.voorbereiding : null,
         promptSuggestion: event.running ? null : s.promptSuggestion,
         permissions: event.running ? s.permissions : [],
         items: event.running ? s.items : s.items.map((i) => (i.kind === 'tool' && !i.done ? { ...i, done: true } : i)),

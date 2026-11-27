@@ -1,9 +1,10 @@
 import { listSessions, query, type Query, type SDKResultMessage, type SDKUserMessage } from '@anthropic-ai/claude-agent-sdk';
 import { EventEmitter, on } from 'node:events';
-import { constants, existsSync, readFileSync } from 'node:fs';
+import { constants, createReadStream, existsSync, readFileSync } from 'node:fs';
 import { access, appendFile, mkdir, readdir, readFile, realpath, rename, stat, writeFile } from 'node:fs/promises';
 import { homedir } from 'node:os';
 import path from 'node:path';
+import { createInterface } from 'node:readline';
 import type { Effort, Limits, ModelOption, SavedTabs, SessionSummary, UiSettings } from '../shared/protocol.js';
 
 const configDir = path.join(process.env.XDG_CONFIG_HOME ?? path.join(homedir(), '.config'), 'claude-ui');
@@ -240,12 +241,43 @@ export const repoName = (dir: string) => {
   return relative && !relative.startsWith('..') && !path.isAbsolute(relative) ? relative : path.basename(dir);
 };
 
+// listSessions leest alleen de eerste 64 KB van een transcript; begint het gesprek met een grote afbeelding,
+// dan staat de cwd daar niet in. Dan lezen we het bestand zelf tot de eerste cwd.
+const cwdFromTranscript = async (file: string) => {
+  const lines = createInterface({ input: createReadStream(file) });
+  for await (const line of lines) {
+    const match = /"cwd":("(?:[^"\\]|\\.)*")/.exec(line);
+    if (match) {
+      lines.close();
+      return JSON.parse(match[1]) as string;
+    }
+  }
+  return undefined;
+};
+
+const withCwd = async <T extends { sessionId: string; cwd?: string }>(sessions: T[]) => {
+  const missing = sessions.filter((s) => !s.cwd);
+  if (missing.length === 0) {
+    return sessions;
+  }
+  const dirs = await readdir(claudeProjects);
+  await Promise.all(
+    missing.map(async (s) => {
+      const dir = dirs.find((d) => existsSync(path.join(claudeProjects, d, `${s.sessionId}.jsonl`)));
+      if (dir) {
+        s.cwd = await cwdFromTranscript(path.join(claudeProjects, dir, `${s.sessionId}.jsonl`));
+      }
+    }),
+  );
+  return sessions;
+};
+
 // Sessies binnen de standaardmap of in een recent geopende map; `repo` is de naam van het project,
 // zodat sessies in submappen bij hun repo staan.
 export const allSessions = async (): Promise<SessionSummary[]> => {
   const recent = await readRecent();
   const known = (dir: string) => isWithinRoot(dir) || recent.some((r) => dir === r || dir.startsWith(r + path.sep));
-  return (await listSessions({ limit: 500 }))
+  return (await withCwd(await listSessions({ limit: 500 })))
     .filter((s) => !s.archived && s.cwd && known(s.cwd))
     .sort((a, b) => b.lastModified - a.lastModified)
     .map((s) => ({

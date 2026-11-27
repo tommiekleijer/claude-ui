@@ -6,6 +6,7 @@ import ImagePreview from '../ui/ImagePreview';
 import Markdown from '../Markdown/Markdown';
 import ChatSearch from './ChatSearch';
 import QuoteButton from './QuoteButton';
+import Poppetje from '../Poppetje/Poppetje';
 import ToolCard from '../ToolCard/ToolCard';
 import { Chip, Knop } from '../../vertex';
 import styles from './ChatView.module.scss';
@@ -75,14 +76,13 @@ const ChatView = ({ tabId, active }: { tabId: number; active: boolean }) => {
   const innerRef = useRef<HTMLDivElement>(null);
   const stick = useRef(true);
   const last = items[items.length - 1];
-  const showTyping = running && !(last?.kind === 'assistant' && last.streaming);
 
   useLayoutEffect(() => {
     const el = scrollRef.current;
     if (el && (stick.current || last?.kind === 'user')) {
       el.scrollTop = el.scrollHeight;
     }
-  }, [items, showTyping, last, queue.length]);
+  }, [items, running, last, queue.length]);
 
   useEffect(() => {
     const el = scrollRef.current;
@@ -125,13 +125,7 @@ const ChatView = ({ tabId, active }: { tabId: number; active: boolean }) => {
           <div className={styles.empty}>{cwd ? `Claude Code werkt in ${cwd}` : 'Kies eerst een project'}</div>
         )}
         {items.map(renderItem)}
-        {showTyping && (
-          <div className={styles.typing}>
-            <span />
-            <span />
-            <span />
-          </div>
-        )}
+        <Poppetje tabId={tabId} actief={active} />
         {queue
           .filter((q) => !q.resumed)
           .map((q) => (

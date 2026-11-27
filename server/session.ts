@@ -189,6 +189,9 @@ export class ClaudeSession {
         skills: 'all',
         settings: { deniedMcpServers: duplicateConnectors().map((serverName) => ({ serverName })) },
         abortController: this.abort,
+        // Het takenpaneel heeft een stopknop per taak; daardoor stopt Esc alleen de beurt en laat het
+        // achtergrond-agents en -scripts doorlopen (zonder deze vlag stopt de CLI ze allemaal).
+        perTaskStopAffordance: true,
         hooks: {
           PostToolUse: [{ matcher: 'Bash', hooks: [compactBashOutput] }],
           PostModelSwitch: [{ hooks: [this.warnCacheBreak] }],
@@ -594,6 +597,8 @@ export class ClaudeSession {
         } else if (event.type === 'content_block_start' && event.content_block.type === 'text') {
           this.streamedMessages.add(this.currentMessageId);
           this.send({ type: 'text_start', id: `${this.currentMessageId}:${event.index}` });
+        } else if (event.type === 'content_block_start' && event.content_block.type === 'tool_use') {
+          this.send({ type: 'tool_preparing', name: event.content_block.name });
         } else if (event.type === 'content_block_delta' && event.delta.type === 'text_delta') {
           this.send({ type: 'text_delta', id: `${this.currentMessageId}:${event.index}`, text: event.delta.text });
         } else if (event.type === 'content_block_stop') {

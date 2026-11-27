@@ -81,9 +81,9 @@
   background: var(--tekst-vaag);
 }
 
-.running {
-  background: var(--status-waarschuwing);
-  animation: pulse 1.2s ease-in-out infinite;
+.bezig {
+  display: flex;
+  flex: 0 0 16px;
 }
 
 .waiting {
@@ -167,12 +167,6 @@
 .close {
   @include stijl.mini-knop;
   opacity: 0;
-}
-
-@keyframes pulse {
-  50% {
-    opacity: 0.35;
-  }
 }
 
 .dragging {

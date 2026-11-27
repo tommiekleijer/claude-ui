@@ -110,6 +110,8 @@ export type ServerEvent =
   | { type: 'text_start'; id: string }
   | { type: 'text_delta'; id: string; text: string }
   | { type: 'text_end'; id: string }
+  /** Claude begint aan een tool-aanroep en schrijft nog de input; tool_start volgt als die compleet is. */
+  | { type: 'tool_preparing'; name: string }
   | { type: 'tool_start'; id: string; name: string; input: Record<string, unknown> }
   | { type: 'tool_end'; id: string; output: string; isError: boolean }
   | {
