@@ -18,6 +18,7 @@ import {
   send,
   setLastSent,
   setManageOpen,
+  stop,
   useApp,
   useStore,
 } from '../../store';
@@ -186,7 +187,7 @@ const Composer = () => {
         !document.querySelector('[role=dialog], [role=listbox], [role=search]') &&
         !(event.target as Element | null)?.closest?.('.xterm')
       ) {
-        send({ type: 'interrupt' });
+        stop();
       }
     };
     const handleInsert = (event: Event) => {
@@ -601,7 +602,7 @@ const Composer = () => {
           <span className={styles.spacer} />
           {dictationStatus && <span className={styles.dictationStatus}>{dictationStatus}</span>}
           {running && (
-            <Knop variant="destructief" maat="s" icoon={<Square size={14} />} onClick={() => send({ type: 'interrupt' })}>
+            <Knop variant="destructief" maat="s" icoon={<Square size={14} />} onClick={() => stop()}>
               Stoppen
             </Knop>
           )}

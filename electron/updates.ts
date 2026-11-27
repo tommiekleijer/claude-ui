@@ -1,4 +1,5 @@
 import { app, BrowserWindow, ipcMain, shell } from 'electron';
+import { spawn } from 'node:child_process';
 import electronUpdater from 'electron-updater';
 
 const { autoUpdater } = electronUpdater;
@@ -23,6 +24,18 @@ const publish = (next: UpdateState) => {
 // macOS-updates vragen een ondertekende app; die hebben we niet, dus daar openen we de downloadpagina.
 const canInstallInApp = process.platform !== 'darwin';
 
+let downloadedFile: string | null = null;
+
+// Electron draait op Linux met no_new_privs, waardoor pkexec (setuid) vanuit de app faalt met exit 127.
+// Daarom installeren we de .deb vanuit een los systemd-proces (zonder die vlag) en starten daarna de app opnieuw.
+const installDebOutsideApp = (file: string) => {
+  spawn('systemd-run', ['--user', '--collect', '--quiet', '/bin/sh', '-c', 'pkexec dpkg -i "$0"; exec "$1"', file, process.execPath], {
+    detached: true,
+    stdio: 'ignore',
+  }).unref();
+  app.quit();
+};
+
 const check = async () => {
   if (!app.isPackaged) {
     return;
@@ -41,7 +54,10 @@ export const setupUpdates = () => {
   autoUpdater.on('update-available', (info) => publish({ status: 'available', version: info.version }));
   autoUpdater.on('update-not-available', () => publish({ status: 'none' }));
   autoUpdater.on('download-progress', (progress) => publish({ status: 'downloading', percent: Math.round(progress.percent) }));
-  autoUpdater.on('update-downloaded', () => publish({ status: 'ready' }));
+  autoUpdater.on('update-downloaded', (event) => {
+    downloadedFile = event.downloadedFile;
+    publish({ status: 'ready' });
+  });
   autoUpdater.on('error', (error) => publish({ status: 'error', message: error.message }));
 
   ipcMain.handle('app-version', () => app.getVersion());
@@ -58,7 +74,11 @@ export const setupUpdates = () => {
       publish({ status: 'error', message: error instanceof Error ? error.message : String(error) });
     }
   });
-  ipcMain.handle('update-restart', () => autoUpdater.quitAndInstall());
+  ipcMain.handle('update-restart', () =>
+    process.platform === 'linux' && !process.env.APPIMAGE && downloadedFile?.endsWith('.deb')
+      ? installDebOutsideApp(downloadedFile)
+      : autoUpdater.quitAndInstall(),
+  );
 
   // Stil controleren kort na het opstarten en daarna elk kwartier; de gebruiker beslist zelf over installeren.
   // Staat er al een update klaar of loopt de download, dan niet opnieuw zoeken (dat zou de knop terugzetten).

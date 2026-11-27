@@ -1,0 +1,874 @@
+$oranje: #d97757;
+$rood: #e5484d;
+
+.baan {
+  position: relative;
+  display: flex;
+  align-items: flex-end;
+  gap: 4px;
+  width: 220px;
+  margin: 0;
+  padding: var(--ruimte-2) 0;
+  border: 0;
+  background: none;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.buik {
+  display: block;
+  transform: scaleX(var(--buik, 1));
+  transform-origin: 30px bottom;
+  transition: transform 1s ease;
+}
+
+.poppetje {
+  display: block;
+  overflow: visible;
+  fill: $oranje;
+
+  * {
+    transform-box: fill-box;
+  }
+}
+
+.lijf {
+  transform-box: view-box !important;
+  transform-origin: 8px 8px;
+}
+
+.ooglid {
+  transform-origin: center top;
+  transform: scaleY(0);
+  animation: knipper 3.1s infinite;
+}
+
+.armLinks {
+  transform-box: view-box !important;
+  transform-origin: 2px 5px;
+}
+
+.armRechts {
+  transform-box: view-box !important;
+  transform-origin: 14px 5px;
+}
+
+.poot {
+  transform-origin: center top;
+}
+
+// Losse onderdelen: standaard verborgen, de stand zet ze aan.
+.kruisOgen,
+.wenkbrauwen,
+.hamer,
+.vergrootglas,
+.toetsenbord,
+.vraag,
+.zzz,
+.hihi {
+  display: none;
+}
+
+.kruisOgen,
+.wenkbrauwen {
+  fill: none;
+  stroke: var(--tekst-hoofd);
+  stroke-width: 0.45;
+  stroke-linecap: round;
+}
+
+.steel {
+  fill: #8b5a2b;
+}
+
+.kop {
+  fill: #9aa0a6;
+}
+
+.handvat {
+  fill: none;
+  stroke: #8b5a2b;
+  stroke-width: 0.6;
+  stroke-linecap: round;
+}
+
+.lens {
+  fill: rgb(160 200 255 / 35%);
+  stroke: #9aa0a6;
+  stroke-width: 0.45;
+}
+
+.toetsenbord {
+  fill: var(--tekst-gedempt);
+}
+
+.vraag,
+.zzz text,
+.hihi {
+  font-family: var(--tekst-familie);
+  font-weight: 700;
+  text-anchor: middle;
+}
+
+.vraag {
+  font-size: 4.5px;
+  fill: var(--accent-standaard);
+  transform-origin: center bottom;
+}
+
+.zzz text {
+  font-size: 3.6px;
+  fill: var(--tekst-gedempt);
+}
+
+.hihi {
+  font-size: 3.6px;
+  fill: var(--tekst-gedempt);
+}
+
+.mutsRood {
+  fill: #c8102e;
+}
+
+.mutsWit {
+  fill: #fff;
+}
+
+.klein {
+  margin-bottom: 1px;
+}
+
+// ---- Willekeurige acties ----
+
+.dansen {
+  animation: dansHop 0.5s infinite ease-in-out;
+
+  .lijf {
+    animation: dansWieg 1s infinite ease-in-out;
+  }
+
+  .armLinks {
+    animation: armOmhoogLinks 0.5s infinite alternate ease-in-out;
+  }
+
+  .armRechts {
+    animation: armOmhoogRechts 0.5s infinite alternate-reverse ease-in-out;
+  }
+}
+
+.lopen {
+  --leun: 7deg;
+  animation: loopBaan 4s infinite linear;
+
+  .poot {
+    animation: stap 0.3s infinite alternate ease-in-out;
+  }
+
+  .pootAnders {
+    animation-direction: alternate-reverse;
+  }
+
+  .lijf {
+    animation: loopLeun 0.3s infinite alternate ease-in-out;
+  }
+}
+
+// 1 april: leunt de verkeerde kant op, dus loopt achteruit.
+.april .lopen {
+  --leun: -10deg;
+}
+
+.zwaaien .armRechts {
+  animation: zwaai 0.35s infinite alternate ease-in-out;
+}
+
+.springen {
+  animation: sprong 0.8s infinite ease-in-out;
+
+  .poot {
+    animation: pootjesIn 0.8s infinite ease-in-out;
+  }
+}
+
+.draaien {
+  animation: draai 1.2s infinite ease-in-out;
+}
+
+.typen {
+  .toetsenbord {
+    display: inline;
+  }
+
+  .lijf {
+    animation: dobber 0.25s infinite alternate ease-in-out;
+  }
+
+  .armLinks {
+    animation: tik 0.18s infinite alternate ease-in-out;
+  }
+
+  .armRechts {
+    animation: tikRechts 0.18s infinite alternate-reverse ease-in-out;
+  }
+}
+
+.juichen {
+  animation: dansHop 0.4s infinite ease-in-out;
+
+  .armLinks {
+    animation: armOmhoogLinks 0.2s infinite alternate ease-in-out;
+  }
+
+  .armRechts {
+    animation: armOmhoogRechts 0.2s infinite alternate ease-in-out;
+  }
+}
+
+// ---- Per tool ----
+
+.zoeken {
+  animation: speur 3s infinite ease-in-out;
+
+  .vergrootglas {
+    display: inline;
+  }
+
+  .armRechts {
+    animation: glasOmhoog 3s infinite ease-in-out;
+  }
+
+  .poot {
+    animation: stap 0.35s infinite alternate ease-in-out;
+  }
+
+  .pootAnders {
+    animation-direction: alternate-reverse;
+  }
+}
+
+.timmeren {
+  .hamer {
+    display: inline;
+  }
+
+  .armRechts {
+    animation: timmer 0.45s infinite cubic-bezier(0.6, 0, 1, 0.6);
+  }
+
+  .lijf {
+    animation: dobber 0.45s infinite alternate ease-in-out;
+  }
+}
+
+// ---- Standen ----
+
+.toestemming {
+  .vraag {
+    display: inline;
+    animation: wiebel 0.8s infinite ease-in-out;
+  }
+
+  .poot:last-of-type {
+    animation: tik 0.25s infinite alternate ease-in-out;
+  }
+}
+
+.fout {
+  transform-origin: center bottom;
+  animation: inzakken 1.6s ease-in-out forwards;
+
+  .kruisOgen {
+    display: inline;
+  }
+
+  .ooglid {
+    display: none;
+  }
+
+  .armLinks {
+    transform: rotate(-60deg);
+  }
+
+  .armRechts {
+    transform: rotate(60deg);
+  }
+}
+
+.klaar {
+  animation: weglopen 2.4s ease-in forwards;
+
+  .lijf {
+    animation: buig 0.9s ease-in-out;
+  }
+
+  .armRechts {
+    animation: zwaai 0.3s 1s infinite alternate ease-in-out;
+  }
+
+  .poot {
+    animation: stap 0.25s 1s infinite alternate ease-in-out;
+  }
+
+  .pootAnders {
+    animation-direction: alternate-reverse;
+  }
+}
+
+.slaapt {
+  .zzz {
+    display: inline;
+
+    text {
+      animation: zweef 2.4s infinite ease-out;
+      opacity: 0;
+    }
+
+    text:nth-child(2) {
+      animation-delay: 0.8s;
+    }
+
+    text:nth-child(3) {
+      animation-delay: 1.6s;
+    }
+  }
+
+  .ooglid {
+    animation: none;
+    transform: scaleY(1);
+  }
+
+  .poot {
+    transform: scaleY(0.25);
+  }
+
+  .lijf {
+    animation: adem 2.4s infinite ease-in-out;
+  }
+
+  .armLinks {
+    transform: rotate(-40deg);
+  }
+
+  .armRechts {
+    transform: rotate(40deg);
+  }
+}
+
+.wakker {
+  animation: schrik 0.8s ease-out;
+
+  .ooglid {
+    animation: none;
+  }
+
+  .armLinks {
+    animation: armOmhoogLinks 0.1s 4 alternate;
+  }
+
+  .armRechts {
+    animation: armOmhoogRechts 0.1s 4 alternate;
+  }
+}
+
+.giechel {
+  animation: giechel 0.7s ease-in-out;
+
+  .hihi {
+    display: inline;
+    animation: zweef 0.7s ease-out forwards;
+  }
+
+  .ooglid {
+    animation: none;
+    transform: scaleY(0.6);
+  }
+}
+
+.boos {
+  animation:
+    rood 0.3s forwards,
+    tril 0.07s infinite linear;
+
+  .wenkbrauwen {
+    display: inline;
+  }
+
+  .armLinks {
+    animation: armOmhoogLinks 0.12s infinite alternate;
+  }
+
+  .armRechts {
+    animation: armOmhoogRechts 0.12s infinite alternate-reverse;
+  }
+
+  .poot {
+    animation: stap 0.12s infinite alternate;
+  }
+}
+
+// ---- Ontploffing ----
+
+.ontploft {
+  animation:
+    rood 0.7s ease-in forwards,
+    opzwellen 0.75s ease-in forwards,
+    tril 0.07s 11 linear;
+}
+
+.scherf {
+  transform-origin: center;
+  animation: scherf 1.6s 0.75s cubic-bezier(0.15, 0.8, 0.3, 1) forwards;
+}
+
+.flits {
+  fill: #ffd166;
+  opacity: 0;
+  transform-origin: center;
+  animation: flits 0.5s 0.72s ease-out;
+}
+
+// ---- December ----
+
+.sneeuw {
+  position: absolute;
+  inset: -20px 0 0;
+  overflow: hidden;
+  pointer-events: none;
+
+  span {
+    position: absolute;
+    top: -4px;
+    width: 3px;
+    height: 3px;
+    border-radius: 50%;
+    background: var(--tekst-vaag);
+    animation: sneeuw linear infinite;
+  }
+}
+
+// ---- Tabbalk ----
+
+.icoon {
+  flex: 0 0 16px;
+  fill: $oranje;
+  overflow: visible;
+  animation: dansHop 0.5s infinite ease-in-out;
+
+  .poot {
+    transform-box: fill-box;
+    animation: stap 0.25s infinite alternate ease-in-out;
+  }
+
+  .pootAnders {
+    animation-direction: alternate-reverse;
+  }
+}
+
+// ---- Keyframes ----
+
+@keyframes knipper {
+  0%,
+  92%,
+  100% {
+    transform: scaleY(0);
+  }
+
+  96% {
+    transform: scaleY(1);
+  }
+}
+
+@keyframes dansHop {
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+
+  50% {
+    transform: translateY(-4px);
+  }
+}
+
+@keyframes dansWieg {
+  0%,
+  100% {
+    transform: rotate(-8deg);
+  }
+
+  50% {
+    transform: rotate(8deg);
+  }
+}
+
+@keyframes armOmhoogLinks {
+  from {
+    transform: rotate(-20deg);
+  }
+
+  to {
+    transform: rotate(60deg);
+  }
+}
+
+@keyframes armOmhoogRechts {
+  from {
+    transform: rotate(20deg);
+  }
+
+  to {
+    transform: rotate(-60deg);
+  }
+}
+
+@keyframes loopBaan {
+  0% {
+    transform: translateX(0) scaleX(1);
+  }
+
+  47% {
+    transform: translateX(110px) scaleX(1);
+  }
+
+  50% {
+    transform: translateX(110px) scaleX(-1);
+  }
+
+  97% {
+    transform: translateX(0) scaleX(-1);
+  }
+
+  100% {
+    transform: translateX(0) scaleX(1);
+  }
+}
+
+@keyframes loopLeun {
+  from {
+    transform: rotate(var(--leun)) translateY(0);
+  }
+
+  to {
+    transform: rotate(var(--leun)) translateY(-1px);
+  }
+}
+
+@keyframes stap {
+  from {
+    transform: rotate(-25deg);
+  }
+
+  to {
+    transform: rotate(25deg);
+  }
+}
+
+@keyframes dobber {
+  from {
+    transform: translateY(0);
+  }
+
+  to {
+    transform: translateY(-1px);
+  }
+}
+
+@keyframes zwaai {
+  from {
+    transform: rotate(-50deg);
+  }
+
+  to {
+    transform: rotate(-110deg);
+  }
+}
+
+@keyframes sprong {
+  0%,
+  100% {
+    transform: translateY(0) scale(1.1, 0.85);
+  }
+
+  15% {
+    transform: translateY(0) scale(1);
+  }
+
+  50% {
+    transform: translateY(-14px) scale(0.95, 1.05);
+  }
+
+  85% {
+    transform: translateY(0) scale(1);
+  }
+}
+
+@keyframes pootjesIn {
+  0%,
+  30%,
+  70%,
+  100% {
+    transform: scaleY(1);
+  }
+
+  50% {
+    transform: scaleY(0.6);
+  }
+}
+
+@keyframes draai {
+  0%,
+  100% {
+    transform: scaleX(1);
+  }
+
+  25% {
+    transform: scaleX(0.1);
+  }
+
+  50% {
+    transform: scaleX(-1);
+  }
+
+  75% {
+    transform: scaleX(0.1);
+  }
+}
+
+@keyframes tik {
+  from {
+    transform: rotate(-30deg);
+  }
+
+  to {
+    transform: rotate(-10deg);
+  }
+}
+
+@keyframes tikRechts {
+  from {
+    transform: rotate(30deg);
+  }
+
+  to {
+    transform: rotate(10deg);
+  }
+}
+
+@keyframes speur {
+  0%,
+  100% {
+    transform: translateX(0) scaleX(1);
+  }
+
+  45% {
+    transform: translateX(60px) scaleX(1);
+  }
+
+  50% {
+    transform: translateX(60px) scaleX(-1);
+  }
+
+  95% {
+    transform: translateX(0) scaleX(-1);
+  }
+}
+
+@keyframes glasOmhoog {
+  0%,
+  100% {
+    transform: rotate(-20deg);
+  }
+
+  25%,
+  75% {
+    transform: rotate(-45deg);
+  }
+
+  50% {
+    transform: rotate(-10deg);
+  }
+}
+
+@keyframes timmer {
+  0% {
+    transform: rotate(-80deg);
+  }
+
+  85% {
+    transform: rotate(15deg);
+  }
+
+  100% {
+    transform: rotate(-80deg);
+  }
+}
+
+@keyframes wiebel {
+  0%,
+  100% {
+    transform: rotate(-12deg) translateY(0);
+  }
+
+  50% {
+    transform: rotate(12deg) translateY(-1px);
+  }
+}
+
+@keyframes inzakken {
+  0% {
+    transform: scaleY(1);
+  }
+
+  25%,
+  75% {
+    transform: scale(1.15, 0.55);
+  }
+
+  100% {
+    transform: scaleY(1);
+  }
+}
+
+@keyframes buig {
+  0%,
+  100% {
+    transform: none;
+  }
+
+  40%,
+  60% {
+    transform: translateY(1.5px) rotate(25deg) scaleY(0.85);
+  }
+}
+
+@keyframes weglopen {
+  0%,
+  40% {
+    transform: translateX(0);
+    opacity: 1;
+  }
+
+  100% {
+    transform: translateX(160px);
+    opacity: 0;
+  }
+}
+
+@keyframes zweef {
+  0% {
+    opacity: 0;
+    transform: translate(0, 0);
+  }
+
+  30% {
+    opacity: 1;
+  }
+
+  100% {
+    opacity: 0;
+    transform: translate(2px, -4px);
+  }
+}
+
+@keyframes adem {
+  0%,
+  100% {
+    transform: translateY(1.5px) scale(1);
+  }
+
+  50% {
+    transform: translateY(1.5px) scale(1.04, 0.96);
+  }
+}
+
+@keyframes schrik {
+  0% {
+    transform: translateY(0) scale(1);
+  }
+
+  30% {
+    transform: translateY(-16px) scale(1.15);
+  }
+
+  60% {
+    transform: translateY(0) scale(1);
+  }
+
+  80% {
+    transform: translateY(-3px);
+  }
+
+  100% {
+    transform: translateY(0);
+  }
+}
+
+@keyframes giechel {
+  0%,
+  100% {
+    transform: translateY(0) rotate(0);
+  }
+
+  25% {
+    transform: translateY(-5px) rotate(-8deg);
+  }
+
+  50% {
+    transform: translateY(0) rotate(8deg);
+  }
+
+  75% {
+    transform: translateY(-2px) rotate(-4deg);
+  }
+}
+
+@keyframes opzwellen {
+  to {
+    scale: 1.25;
+  }
+}
+
+@keyframes flits {
+  from {
+    opacity: 0.9;
+    transform: scale(0.3);
+  }
+
+  to {
+    opacity: 0;
+    transform: scale(2.4);
+  }
+}
+
+@keyframes rood {
+  to {
+    fill: $rood;
+  }
+}
+
+@keyframes tril {
+  0%,
+  100% {
+    transform: translate(0, 0);
+  }
+
+  25% {
+    transform: translate(-2px, 1px);
+  }
+
+  75% {
+    transform: translate(2px, -1px);
+  }
+}
+
+@keyframes scherf {
+  to {
+    transform: translate(var(--dx), var(--dy)) rotate(var(--r)) scale(0.3);
+    opacity: 0;
+  }
+}
+
+@keyframes sneeuw {
+  to {
+    transform: translateY(90px);
+  }
+}

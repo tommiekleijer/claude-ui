@@ -17,6 +17,7 @@ import {
   useTabState,
 } from '../../store';
 import { matchesShortcut, useShortcut } from '../../shortcuts';
+import { PoppetjeIcoon } from '../Poppetje/Poppetje';
 import styles from './TabBar.module.scss';
 
 /** De tab die nu gesleept wordt, met de volgorde van vóór het slepen (voor Esc). */
@@ -92,13 +93,16 @@ const TabButton = ({ id, active }: { id: number; active: boolean }) => {
       onAuxClick={(event) => event.button === 1 && close(event)}
       title={`${title}${cwd ? `\n${cwd}` : ''}`}
     >
-      <span
-        className={[
-          styles.dot,
-          waiting ? styles.waiting : running ? styles.running : unread ? styles.unread : '',
-        ].join(' ')}
-        title={waiting ? 'Wacht op toestemming' : running ? 'Bezig' : unread ? 'Klaar, nog niet gelezen' : undefined}
-      />
+      {running && !waiting ? (
+        <span className={styles.bezig} title="Bezig">
+          <PoppetjeIcoon />
+        </span>
+      ) : (
+        <span
+          className={[styles.dot, waiting ? styles.waiting : unread ? styles.unread : ''].join(' ')}
+          title={waiting ? 'Wacht op toestemming' : unread ? 'Klaar, nog niet gelezen' : undefined}
+        />
+      )}
       {editing ? (
         <input
           className={styles.titleInvoer}

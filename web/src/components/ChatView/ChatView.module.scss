@@ -155,28 +155,6 @@
   }
 }
 
-.typing {
-  display: flex;
-  gap: 5px;
-  padding: var(--ruimte-2) 0;
-
-  span {
-    width: 7px;
-    height: 7px;
-    border-radius: 50%;
-    background: var(--accent-standaard);
-    animation: pulse 1.2s infinite ease-in-out;
-  }
-
-  span:nth-child(2) {
-    animation-delay: 0.15s;
-  }
-
-  span:nth-child(3) {
-    animation-delay: 0.3s;
-  }
-}
-
 .empty {
   margin-top: 30vh;
   color: var(--tekst-gedempt);
@@ -186,18 +164,6 @@
 @keyframes blink {
   to {
     visibility: hidden;
-  }
-}
-
-@keyframes pulse {
-  0%,
-  80%,
-  100% {
-    opacity: 0.25;
-  }
-
-  40% {
-    opacity: 1;
   }
 }
 
